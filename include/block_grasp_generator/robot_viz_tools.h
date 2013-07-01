@@ -373,6 +373,7 @@ public:
     // Set the marker type.
     marker.type = visualization_msgs::Marker::MESH_RESOURCE;
     marker.mesh_resource = "package://clam_description/stl/gripper_base_link.STL";
+    ROS_ERROR_STREAM_NAMED("temp","TODO - add mesh resource");
 
     // Set the marker action.  Options are ADD and DELETE
     marker.action = visualization_msgs::Marker::ADD;

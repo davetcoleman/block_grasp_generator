@@ -57,9 +57,6 @@
 #include <moveit/trajectory_processing/trajectory_tools.h> // for plan_execution
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
-// Clam
-#include <clam_msgs/ClamGripperCommandAction.h>
-
 // Rviz
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -171,7 +168,7 @@ public:
     grasp_data_.pre_grasp_posture_.name[0] = EE_JOINT;
     // Position of joints
     grasp_data_.pre_grasp_posture_.position.resize(1);
-    grasp_data_.pre_grasp_posture_.position[0] = clam_msgs::ClamGripperCommandGoal::GRIPPER_OPEN;
+    grasp_data_.pre_grasp_posture_.position[0] = 0; // TODO clam_msgs::ClamGripperCommandGoal::GRIPPER_OPEN;
 
     // -------------------------------
     // Create grasp posture
@@ -182,7 +179,7 @@ public:
     grasp_data_.grasp_posture_.name[0] = EE_JOINT;
     // Position of joints
     grasp_data_.grasp_posture_.position.resize(1);
-    grasp_data_.grasp_posture_.position[0] = clam_msgs::ClamGripperCommandGoal::GRIPPER_CLOSE;
+    grasp_data_.grasp_posture_.position[0] = 1; // TODO clam_msgs::ClamGripperCommandGoal::GRIPPER_CLOSE;
 
     // -------------------------------
     // Links

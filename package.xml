@@ -6,9 +6,9 @@
 
   <license>BSD</license>
 
-  <url type="website">http://correll.cs.colorado.edu/clam/</url>
-  <url type="bugtracker">https://github.com/davetcoleman/clam/issues</url>
-  <url type="repository">https://github.com/davetcoleman/clam</url>
+  <url type="website">http://correll.cs.colorado.edu/block_grasp_generator/</url>
+  <url type="bugtracker">https://github.com/davetcoleman/block_grasp_generator/issues</url>
+  <url type="repository">https://github.com/davetcoleman/block_grasp_generator</url>
 
   <author>Dave Coleman</author>
 
@@ -23,7 +23,6 @@
   <build_depend>moveit_ros_planning_interface</build_depend>
   <build_depend>moveit_ros_robot_interaction</build_depend>
   <build_depend>moveit_core</build_depend>
-  <build_depend>clam_msgs</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>eigen_conversions</run_depend>
@@ -36,7 +35,6 @@
   <run_depend>moveit_ros_planning_interface</run_depend>
   <run_depend>moveit_ros_robot_interaction</run_depend>
   <run_depend>moveit_core</run_depend>
-  <run_depend>clam_msgs</run_depend>
 
   <buildtool_depend>catkin</buildtool_depend>
 
