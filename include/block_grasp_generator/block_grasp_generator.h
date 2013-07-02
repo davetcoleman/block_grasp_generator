@@ -33,13 +33,12 @@
  *********************************************************************/
 
 // Author: Dave Coleman
-//   Desc:   Generates grasps for a cube
+// Desc:   Generates grasps for a cube
 
 // ROS
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
 #include <geometry_msgs/PoseArray.h>
-//#include <geometry_msgs/PoseStamped.h>
 #include <sensor_msgs/JointState.h>
 #include <manipulation_msgs/Grasp.h>
 #include <Eigen/Core>
@@ -47,15 +46,7 @@
 #include <eigen_conversions/eigen_msg.h>
 
 // Rviz
-//#include "robot_viz_tools.h"
 #include <block_grasp_generator/robot_viz_tools.h>
-//#include <visualization_msgs/Marker.h>
-//#include <visualization_msgs/MarkerArray.h>
-
-
-// MoveIt
-//#include <moveit/robot_state/robot_state.h>
-//#include <moveit/kinematics_plugin_loader/kinematics_plugin_loader.h>
 
 // C++
 #include <math.h>
@@ -105,7 +96,7 @@ private:
 public:
 
   // Constructor
-  BlockGraspGenerator( RobotVizToolsPtr rviz_tools);                  
+  BlockGraspGenerator(RobotVizToolsPtr rviz_tools);
 
   // Destructor
   ~BlockGraspGenerator();
