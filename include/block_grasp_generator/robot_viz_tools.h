@@ -121,9 +121,17 @@ public:
     // Rviz Visualizations
     rviz_marker_pub_ = nh_.advertise<visualization_msgs::Marker>(marker_topic_, 1);
     ros::spinOnce();
-    ros::Duration(0.5).sleep(); // TODO: better way of doing this?
+    ros::Duration(0.1).sleep(); // TODO: better way of doing this?
 
     ROS_DEBUG_STREAM_NAMED("robot_viz","Visualizing rviz markers on topic " << marker_topic_);
+  }
+
+  /**
+   * \brief Deconstructor
+   */
+  ~RobotVizTools()
+  {
+    ROS_DEBUG_STREAM_NAMED("rviz_tools","desconstructing class robot_viz_tools");
   }
 
   /**
@@ -132,6 +140,8 @@ public:
    */
   bool loadPlanningSceneMonitor()
   {
+    ROS_ERROR_STREAM_NAMED("temp","THIS IS WHERE PLANNING SCENE MONITOR IS LOADED IN RVIZ_TOOL");
+
     // ---------------------------------------------------------------------------------------------
     // Create planning scene monitor
     planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(ROBOT_DESCRIPTION));
@@ -256,16 +266,22 @@ public:
     }
 
     // Offset from gasp_pose to end effector
-    static const double X_OFFSET = 0.0; //0.15;
+    static const double X_OFFSET = 0; //-0.15;
 
     // Allow a transform from our pose to the end effector position
+
+    // TODO: make this more generic for arbitrary grippers 
+
+    // Orientation
+    double angle = 0; //M_PI / 2;  // turn on Z axis
+    Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitY()));
     grasp_pose_to_eef_pose_.position.x = X_OFFSET;
     grasp_pose_to_eef_pose_.position.y = 0;
     grasp_pose_to_eef_pose_.position.z = 0;
-    grasp_pose_to_eef_pose_.orientation.x = 0;
-    grasp_pose_to_eef_pose_.orientation.y = 0;
-    grasp_pose_to_eef_pose_.orientation.z = 0;
-    grasp_pose_to_eef_pose_.orientation.w = 1;
+    grasp_pose_to_eef_pose_.orientation.x = quat.x();
+    grasp_pose_to_eef_pose_.orientation.y = quat.y();
+    grasp_pose_to_eef_pose_.orientation.z = quat.z();
+    grasp_pose_to_eef_pose_.orientation.w = quat.w();
 
     // Copy original marker poses to a vector
     for (std::size_t i = 0 ; i < marker_array_.markers.size() ; ++i)

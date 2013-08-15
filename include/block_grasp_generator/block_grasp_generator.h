@@ -65,7 +65,8 @@ struct RobotGraspData
     grasp_depth_(0.12), 
     angle_resolution_(16),
     approach_retreat_desired_dist_(0.6),
-    approach_retreat_min_dist_(0.4)
+    approach_retreat_min_dist_(0.4),
+    block_size_(0.04)
   {}
   sensor_msgs::JointState pre_grasp_posture_;
   sensor_msgs::JointState grasp_posture_;
@@ -75,6 +76,7 @@ struct RobotGraspData
   int angle_resolution_; // generate grasps at PI/angle_resolution increments
   double approach_retreat_desired_dist_;
   double approach_retreat_min_dist_;
+  double block_size_;
 };
 
 
@@ -107,7 +109,21 @@ public:
 
   // Show all grasps in Rviz
   void visualizeGrasps(const std::vector<manipulation_msgs::Grasp>& possible_grasps,
-                       const geometry_msgs::Pose& block_pose);
+    const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data);
+
+  static void printBlockGraspData(const RobotGraspData& data)
+  {
+    ROS_INFO_STREAM_NAMED("grasp","ROBOT GRASP DATA DEBUG OUTPUT ---------------------");
+    ROS_INFO_STREAM_NAMED("grasp","Base Link: " << data.base_link_);
+    ROS_INFO_STREAM_NAMED("grasp","EE Parent Link: " << data.ee_parent_link_);
+    ROS_INFO_STREAM_NAMED("grasp","Grasp Depth: " << data.grasp_depth_);
+    ROS_INFO_STREAM_NAMED("grasp","Angle Resolution: " << data.angle_resolution_);
+    ROS_INFO_STREAM_NAMED("grasp","Approach Retreat Desired Dist: " << data.approach_retreat_desired_dist_);
+    ROS_INFO_STREAM_NAMED("grasp","Approach Retreat Min Dist: " << data.approach_retreat_min_dist_);
+    ROS_INFO_STREAM_NAMED("grasp","Pregrasp Posture: \n" << data.pre_grasp_posture_);
+    ROS_INFO_STREAM_NAMED("grasp","Grasp Posture: \n" << data.grasp_posture_);
+    ROS_INFO_STREAM_NAMED("grasp","---------------------------------------------------\n");
+  }
 
 private:
 

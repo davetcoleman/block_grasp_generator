@@ -68,16 +68,35 @@
 namespace block_grasp_generator
 {
 
-// Static const vars
-static const std::string EE_LINK = "gripper_roll_link";
-static const std::string EE_PARENT_LINK = "gripper_roll_link";
 
-// Required for RobotVizTools:
+// ClamArm Specific
+/*
+//static const std::string EE_LINK = "gripper_roll_link";
+static const std::string EE_PARENT_LINK = "gripper_roll_link";
 static const std::string PLANNING_GROUP_NAME = "arm";
 static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 static const std::string EE_GROUP = "gripper_group";
 static const std::string EE_JOINT = "gripper_finger_joint"; // TODO: remove this dependency!!
 static const std::string BASE_LINK = "/base_link";
+*/
+// Baxter specific
+//static const std::string EE_LINK = "gripper_roll_link";
+static const std::string EE_PARENT_LINK = "right_wrist";
+static const std::string PLANNING_GROUP_NAME = "right_arm";
+static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
+static const std::string EE_GROUP = "right_hand";
+static const std::string EE_JOINT = "right_endpoint";
+static const std::string BASE_LINK = "/base";
+
+// Table dimensions
+static const double TABLE_HEIGHT = .92;
+static const double TABLE_WIDTH = .85;
+static const double TABLE_DEPTH = .47;
+static const double TABLE_X = 0.66;
+static const double TABLE_Y = 0;
+static const double TABLE_Z = -0.9/2+0.01;
+
+
 static const double BLOCK_SIZE = 0.04;
 
 class GraspGeneratorTest
@@ -139,7 +158,7 @@ public:
       possible_grasps.clear();
 
       // Generate set of grasps for one block
-      rviz_tools_->setMuted(true); // we don't want to see unfiltered grasps
+      //rviz_tools_->setMuted(true); // we don't want to see unfiltered grasps
       block_grasp_generator_->generateGrasps( block_pose, grasp_data_, possible_grasps);
       rviz_tools_->setMuted(false);
 
@@ -147,7 +166,7 @@ public:
       grasp_filter_->filterGrasps(possible_grasps);
 
       // Visualize them
-      block_grasp_generator_->visualizeGrasps(possible_grasps, block_pose);
+      block_grasp_generator_->visualizeGrasps(possible_grasps, block_pose, grasp_data_);
 
       // Make sure ros is still going
       if(!ros::ok)
@@ -229,10 +248,10 @@ public:
   void generateRandomBlock(geometry_msgs::Pose& block_pose)
   {
     // Position
-    block_pose.position.x = fRand(0.1,0.55);
-    block_pose.position.y = fRand(-0.28,0.28);
-    block_pose.position.z = 0.02;
-
+    block_pose.position.x = fRand(0.7,TABLE_DEPTH);
+    block_pose.position.y = fRand(-TABLE_WIDTH/2,-0.1);
+    block_pose.position.z = TABLE_Z + TABLE_HEIGHT / 2.0 + BLOCK_SIZE / 2.0;
+  
     // Orientation
     double angle = M_PI * fRand(0.1,1);
     Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitZ()));
@@ -255,7 +274,7 @@ public:
 
 int main(int argc, char *argv[])
 {
-  int num_tests = 100;
+  int num_tests = 10;
 
   ros::init(argc, argv, "grasp_generator_test");
 
@@ -282,3 +301,4 @@ int main(int argc, char *argv[])
 
   return 0;
 }
+

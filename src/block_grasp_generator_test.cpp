@@ -67,16 +67,25 @@
 namespace block_grasp_generator
 {
 
-// Static const vars
-static const std::string EE_LINK = "gripper_roll_link";
+// ClamArm Specific
+/*
+//static const std::string EE_LINK = "gripper_roll_link";
 static const std::string EE_PARENT_LINK = "gripper_roll_link";
-
-// Required for RobotVizTools:
 static const std::string PLANNING_GROUP_NAME = "arm";
 static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 static const std::string EE_GROUP = "gripper_group";
 static const std::string EE_JOINT = "gripper_finger_joint"; // TODO: remove this dependency!!
 static const std::string BASE_LINK = "/base_link";
+*/
+// Baxter specific
+//static const std::string EE_LINK = "gripper_roll_link";
+static const std::string EE_PARENT_LINK = "right_wrist";
+static const std::string PLANNING_GROUP_NAME = "right_arm";
+static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
+static const std::string EE_GROUP = "right_hand";
+static const std::string EE_JOINT = "right_endpoint";
+static const std::string BASE_LINK = "/base";
+
 
 class GraspGeneratorTest
 {
@@ -128,8 +137,6 @@ public:
       bool dual_approach = true; // approach straight down and also from an angle
       block_grasp_generator_->generateGrasps( block_pose, grasp_data_, possible_grasps);
     }
-
-
   }
 
   void loadRobotGraspData()

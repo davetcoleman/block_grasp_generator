@@ -53,8 +53,8 @@ catkin_package(
 )
 
 # Enable gdb to show line numbers
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -g")
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -g")
+#set(CMAKE_BUILD_TYPE Debug)
 
 ## Build 
 include_directories(
@@ -70,5 +70,9 @@ target_link_libraries(block_grasp_generator_test ${catkin_LIBRARIES} ${PROJECT_N
 # Test executable
 add_executable(grasp_filter_test src/grasp_filter_test.cpp)
 target_link_libraries(grasp_filter_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator ${PROJECT_NAME}_grasp_filter)
+
+# Test executable
+add_executable(robot_viz_tool_test src/robot_viz_tool_test.cpp)
+target_link_libraries(robot_viz_tool_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator ${PROJECT_NAME}_grasp_filter)
 
 

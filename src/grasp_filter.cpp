@@ -83,7 +83,7 @@ bool GraspFilter::filterGrasps(std::vector<manipulation_msgs::Grasp>& possible_g
   if( num_threads > possible_grasps.size() )
     num_threads = possible_grasps.size();
 
-  if(false)
+  if(true)
   {
     num_threads = 1;
     ROS_ERROR_STREAM_NAMED("grasp_filter","Using " << num_threads << " threads");
@@ -95,6 +95,8 @@ bool GraspFilter::filterGrasps(std::vector<manipulation_msgs::Grasp>& possible_g
   //  getJointStateGroup(planning_group_)->getDefaultIKTimeout();
 
   double timeout = robot_model_->getJointModelGroup( planning_group_ )->getDefaultIKTimeout();
+  ROS_INFO_STREAM_NAMED("grasp_filter","Planning timeout " << timeout);
+  timeout = 0.05;
 
   // -----------------------------------------------------------------------------------------------
   // Load kinematic solvers if not already loaded
@@ -195,6 +197,14 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
 
     // Pointer to current pose
     ik_pose = &ik_thread_struct.possible_grasps_[i].grasp_pose.pose;
+
+    
+    ROS_WARN_STREAM_NAMED("temp","ik_pose" << *ik_pose);
+    std::copy(ik_seed_state.begin(), ik_seed_state.end(), std::ostream_iterator<double>(std::cout, "\n"));      
+    ROS_WARN_STREAM_NAMED("temp","timeout" << ik_thread_struct.timeout_);
+    std::copy(solution.begin(), solution.end(), std::ostream_iterator<double>(std::cout, "\n"));      
+    ROS_WARN_STREAM_NAMED("temp","error_code" << error_code);
+
 
     // Test it with IK
     ik_thread_struct.kin_solver_->
