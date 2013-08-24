@@ -74,9 +74,9 @@ struct RobotGraspData
   std::string ee_parent_link_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
   double grasp_depth_; // distance from center point of object to end effector
   int angle_resolution_; // generate grasps at PI/angle_resolution increments
-  double approach_retreat_desired_dist_;
-  double approach_retreat_min_dist_;
-  double block_size_;
+  double approach_retreat_desired_dist_; // how far back from the grasp position the pregrasp phase should be
+  double approach_retreat_min_dist_; // how far back from the grasp position the pregrasp phase should be at minimum
+  double block_size_; // for visualization
 };
 
 

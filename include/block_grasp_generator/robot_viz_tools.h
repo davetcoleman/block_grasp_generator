@@ -131,7 +131,6 @@ public:
    */
   ~RobotVizTools()
   {
-    ROS_DEBUG_STREAM_NAMED("rviz_tools","desconstructing class robot_viz_tools");
   }
 
   /**
