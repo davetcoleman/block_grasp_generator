@@ -35,6 +35,9 @@
 // Author: Dave Coleman
 // Desc:   Filters grasps based on kinematic feasibility
 
+#ifndef BLOCK_GRASP_GENERATOR__GRASP_FILTER_
+#define BLOCK_GRASP_GENERATOR__GRASP_FILTER_
+
 // ROS
 #include <ros/ros.h>
 #include <tf/tf.h>
@@ -153,4 +156,4 @@ typedef boost::shared_ptr<const GraspFilter> GraspFilterConstPtr;
 
 } // namespace
 
-
+#endif

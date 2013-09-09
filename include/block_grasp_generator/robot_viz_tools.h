@@ -35,8 +35,8 @@
 // Author: Dave Coleman
 // Desc:   Simple tools for showing parts of a robot in Rviz, such as the gripper or arm
 
-#ifndef BLOCK_GRASP_GENERATOR_ROBOT_VIZ_TOOLS_
-#define BLOCK_GRASP_GENERATOR_ROBOT_VIZ_TOOLS_
+#ifndef BLOCK_GRASP_GENERATOR__ROBOT_VIZ_TOOLS_
+#define BLOCK_GRASP_GENERATOR__ROBOT_VIZ_TOOLS_
 
 // Rviz
 #include <visualization_msgs/Marker.h>

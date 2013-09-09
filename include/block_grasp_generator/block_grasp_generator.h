@@ -35,6 +35,9 @@
 // Author: Dave Coleman
 // Desc:   Generates grasps for a cube
 
+#ifndef BLOCK_GRASP_GENERATOR__BLOCK_GRASP_GENERATOR_
+#define BLOCK_GRASP_GENERATOR__BLOCK_GRASP_GENERATOR_
+
 // ROS
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
@@ -138,4 +141,4 @@ typedef boost::shared_ptr<const BlockGraspGenerator> GraspGeneratorConstPtr;
 
 } // namespace
 
-
+#endif
