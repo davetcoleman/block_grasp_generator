@@ -50,7 +50,7 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_state/conversions.h>
-#include <moveit/robot_state/joint_state_group.h>
+//#include <moveit/robot_state/joint_state_group.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/plan_execution/plan_execution.h>
 #include <moveit/plan_execution/plan_with_sensing.h>

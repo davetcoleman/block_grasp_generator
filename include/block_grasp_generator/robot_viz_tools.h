@@ -139,8 +139,6 @@ public:
    */
   bool loadPlanningSceneMonitor()
   {
-    ROS_ERROR_STREAM_NAMED("temp","THIS IS WHERE PLANNING SCENE MONITOR IS LOADED IN RVIZ_TOOL");
-
     // ---------------------------------------------------------------------------------------------
     // Create planning scene monitor
     planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(ROBOT_DESCRIPTION));
@@ -162,11 +160,12 @@ public:
     return true;
   }
 
-  /**
+
+  /**  NEEDS TO BE PORTED TO THE NEW MOVEIT FUNCTIONALITY
    * \brief Move the robot arm to the ik solution in rviz
    * \param joint_values - the in-order list of values to set the robot's joints
    * \return true if it is successful
-   */
+   *
   bool publishPlanningScene(std::vector<double> joint_values)
   {
     if(muted_)
@@ -193,6 +192,7 @@ public:
 
     return true;
   }
+  */
 
   /**
    * \brief Call this once at begining to load the robot marker
@@ -216,19 +216,21 @@ public:
     marker_color.a = 0.85;
 
     // Get robot state
-    robot_state::RobotState robot_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
+    robot_model::RobotModelConstPtr robot_model = planning_scene_monitor_->getRobotModel();
 
     // Get joint state group
-    robot_state::JointStateGroup* joint_state_group = robot_state.getJointStateGroup(ee_group_name_);
-    if( joint_state_group == NULL ) // make sure EE_GROUP exists
+    //robot_state::JointStateGroup* joint_state_group = robot_state.getJointStateGroup(ee_group_name_);
+    const robot_model::JointModelGroup* joint_model_group = robot_model->getJointModelGroup(ee_group_name_);
+
+    if( joint_model_group == NULL ) // make sure EE_GROUP exists
     {
-      ROS_ERROR_STREAM_NAMED("robot_viz","Unable to find joint state group " << ee_group_name_ );
+      ROS_ERROR_STREAM_NAMED("robot_viz","Unable to find joint model group " << ee_group_name_ );
       return false;
     }
 
     // Get link names that are in end effector
-    const std::vector<std::string>
-      &ee_link_names = joint_state_group->getJointModelGroup()->getLinkModelNames();
+    const std::vector<std::string> &ee_link_names = joint_model_group->getLinkModelNames();
+      
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of links in group " << ee_group_name_ << ": " << ee_link_names.size());
 
     // Robot Interaction - finds the end effector associated with a planning group
@@ -252,12 +254,13 @@ public:
 
     // -----------------------------------------------------------------------------------------------
     // Get EE link markers for Rviz
+    robot_state::RobotState robot_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
     robot_state.getRobotMarkers(marker_array_, ee_link_names, marker_color, eef.eef_group, ros::Duration());
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of rviz markers in end effector: " << marker_array_.markers.size());
 
     // Change pose from Eigen to TF
     try{
-      tf::poseEigenToTF(robot_state.getLinkState(eef.parent_link)->getGlobalLinkTransform(), tf_root_to_link_);
+      tf::poseEigenToTF(robot_state.getGlobalLinkTransform(eef.parent_link), tf_root_to_link_);
     }
     catch(...)
     {
