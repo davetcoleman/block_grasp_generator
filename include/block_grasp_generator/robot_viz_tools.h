@@ -45,6 +45,8 @@
 // MoveIt
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_interaction/robot_interaction.h>
+#include <moveit_msgs/CollisionObject.h>
+#include <shape_tools/solid_primitive_dims.h>
 
 // ROS
 #include <tf_conversions/tf_eigen.h>
@@ -57,6 +59,8 @@ namespace block_grasp_generator
 {
 
 static const std::string ROBOT_DESCRIPTION="robot_description";
+static const std::string COLLISION_TOPIC = "/collision_object";
+static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object";
 
 class RobotVizTools
 {
@@ -65,8 +69,10 @@ private:
   // A shared node handle
   ros::NodeHandle nh_;
 
-  // A ROS publisher
+  // ROS publishers
   ros::Publisher rviz_marker_pub_;
+  ros::Publisher pub_collision_obj_; // for MoveIt
+  ros::Publisher pub_attach_collision_obj_; // for MoveIt
 
   // Pointer to a Planning Scene Monitor
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
@@ -76,12 +82,14 @@ private:
   std::string ee_group_name_; // end effector group name
   std::string planning_group_name_; // planning group we are working with
   std::string base_link_; // name of base link of robot
+  std::string ee_parent_link_; // parent link of end effector, loaded from MoveIt!
+
+  double floor_to_base_height_; // allows an offset between base link and floor where objects are built
 
   // Duration to have Rviz markers persist, 0 for infinity
   ros::Duration marker_lifetime_;
 
   // End Effector Markers
-  bool ee_marker_is_loaded_; // determines if we have loaded the marker or not
   visualization_msgs::MarkerArray marker_array_;
   tf::Pose tf_root_to_link_;
   geometry_msgs::Pose grasp_pose_to_eef_pose_;
@@ -95,35 +103,51 @@ public:
   /**
    * \brief Constructor with planning scene
    */
-  RobotVizTools(std::string marker_topic, std::string ee_group_name, std::string planning_group_name, std::string base_link,
-                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor) :
+  RobotVizTools(std::string marker_topic, std::string ee_group_name, std::string planning_group_name,
+    std::string base_link, double floor_to_base_height,
+    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor) :
     planning_scene_monitor_(planning_scene_monitor)
   {
     // Pass to next contructor
-    RobotVizTools(marker_topic, ee_group_name, planning_group_name, base_link);
+    RobotVizTools(marker_topic, ee_group_name, planning_group_name, base_link, floor_to_base_height);
   }
 
   /**
-   * \brief Constructor
+   * \brief Constructor w/o planning scene passed in
    */
-  RobotVizTools(std::string marker_topic, std::string ee_group_name, std::string planning_group_name, std::string base_link) :
+  RobotVizTools(std::string marker_topic, std::string ee_group_name, std::string planning_group_name,
+    std::string base_link, double floor_to_base_height) :
     marker_topic_(marker_topic),
     ee_group_name_(ee_group_name),
     planning_group_name_(planning_group_name),
     base_link_(base_link),
-    ee_marker_is_loaded_(false),
+    floor_to_base_height_(floor_to_base_height),
     marker_lifetime_(ros::Duration(10.0)),
     nh_("~"),
     muted_(false)
   {
 
-    // -----------------------------------------------------------------------------------------------
+    // Load EE Markers
+    if( !loadEEMarker() )
+      ROS_ERROR_STREAM_NAMED("robot_viz","Unable to publish EE marker");
+
     // Rviz Visualizations
     rviz_marker_pub_ = nh_.advertise<visualization_msgs::Marker>(marker_topic_, 1);
+    ROS_DEBUG_STREAM_NAMED("robot_viz","Visualizing rviz markers on topic " << marker_topic_);
+
+    // Collision object creator
+    pub_collision_obj_ = nh_.advertise<moveit_msgs::CollisionObject>(COLLISION_TOPIC, 10);
+    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing collision objects on topic " << COLLISION_TOPIC);
+
+    // Collision object attacher
+    pub_attach_collision_obj_ = nh_.advertise<moveit_msgs::AttachedCollisionObject>
+      (ATTACHED_COLLISION_TOPIC, 10);
+    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing attached collision objects on topic "
+      << ATTACHED_COLLISION_TOPIC);
+
+    // Wait
     ros::spinOnce();
     ros::Duration(0.1).sleep(); // TODO: better way of doing this?
-
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Visualizing rviz markers on topic " << marker_topic_);
   }
 
   /**
@@ -143,19 +167,27 @@ public:
     // Create planning scene monitor
     planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(ROBOT_DESCRIPTION));
 
+    ros::spinOnce();
+    ros::Duration(1.0).sleep();
+    ros::spinOnce();
+
     if (planning_scene_monitor_->getPlanningScene())
     {
       //planning_scene_monitor_->startWorldGeometryMonitor();
       //planning_scene_monitor_->startSceneMonitor("/move_group/monitored_planning_scene");
       //planning_scene_monitor_->startStateMonitor("/joint_states", "/attached_collision_object");
       planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
-                                                            "dave_planning_scene");
+        "dave_planning_scene");
     }
     else
     {
       ROS_FATAL_STREAM_NAMED("rviz_tools","Planning scene not configured");
       return false;
     }
+
+    ros::spinOnce();
+    ros::Duration(1.0).sleep();
+    ros::spinOnce();
 
     return true;
   }
@@ -205,6 +237,7 @@ public:
       if(!loadPlanningSceneMonitor())
         return false;
 
+    return true; // temp
     // -----------------------------------------------------------------------------------------------
     // Get end effector group
 
@@ -259,7 +292,9 @@ public:
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of rviz markers in end effector: " << marker_array_.markers.size());
 
     // Change pose from Eigen to TF
-    try{
+    try
+    {
+      ee_parent_link_ = eef.parent_link; // save the name of the link for later use
       tf::poseEigenToTF(robot_state.getGlobalLinkTransform(eef.parent_link), tf_root_to_link_);
     }
     catch(...)
@@ -272,7 +307,7 @@ public:
 
     // Allow a transform from our pose to the end effector position
 
-    // TODO: make this more generic for arbitrary grippers 
+    // TODO: make this more generic for arbitrary grippers
 
     // Orientation
     double angle = 0; //M_PI / 2;  // turn on Z axis
@@ -291,9 +326,6 @@ public:
       marker_poses_.push_back( marker_array_.markers[i].pose );
     }
 
-    // Record that we have loaded the gripper
-    ee_marker_is_loaded_ = true;
-
     return true;
   }
 
@@ -309,18 +341,6 @@ public:
     ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing end effector markers");
 
     //ROS_INFO_STREAM("Mesh (" << grasp_pose.position.x << ","<< grasp_pose.position.y << ","<< grasp_pose.position.z << ")");
-
-    // -----------------------------------------------------------------------------------------------
-    // Make sure EE Marker is loaded
-    if( !ee_marker_is_loaded_ )
-    {
-      ROS_INFO_STREAM_NAMED("robot_viz","Loading end effector rviz markers");
-      if( !loadEEMarker() )
-      {
-        ROS_WARN_STREAM_NAMED("robot_viz","Unable to publish EE marker");
-        return false;
-      }
-    }
 
     // -----------------------------------------------------------------------------------------------
     // Process each link of the end effector
@@ -653,8 +673,166 @@ public:
     if(!planning_scene_monitor_)
       if(!loadPlanningSceneMonitor())
         ROS_ERROR_STREAM_NAMED("","Unable to get planning scene");
-    
+
     return planning_scene_monitor_;
+  }
+
+  /**
+   * \brief Remove a collision object from the planning scene
+   * \param Name of object
+   */
+  void cleanupCO(std::string name)
+  {
+    // Clean up old collision objects
+    moveit_msgs::CollisionObject co;
+    co.header.stamp = ros::Time::now();
+    co.header.frame_id = base_link_;
+    co.id = name;
+    co.operation = moveit_msgs::CollisionObject::REMOVE;
+    ros::WallDuration(0.1).sleep();
+    pub_collision_obj_.publish(co);
+    ros::WallDuration(0.1).sleep();
+    pub_collision_obj_.publish(co);
+  }
+
+  void cleanupACO(const std::string& name)
+  {
+    // Clean up old attached collision object
+    moveit_msgs::AttachedCollisionObject aco;
+    aco.object.header.stamp = ros::Time::now();
+    aco.object.header.frame_id = base_link_;
+
+    //aco.object.id = name;
+    aco.object.operation = moveit_msgs::CollisionObject::REMOVE;
+
+    aco.link_name = ee_parent_link_;
+
+    ros::WallDuration(0.1).sleep();
+    pub_attach_collision_obj_.publish(aco);
+    ros::WallDuration(0.1).sleep();
+    pub_attach_collision_obj_.publish(aco);
+
+  }
+  void attachCO(const std::string& name)
+  {
+    // Clean up old attached collision object
+    moveit_msgs::AttachedCollisionObject aco;
+    aco.object.header.stamp = ros::Time::now();
+    aco.object.header.frame_id = base_link_;
+
+    aco.object.id = name;
+    aco.object.operation = moveit_msgs::CollisionObject::ADD;
+
+    // Link to attach the object to
+    aco.link_name = ee_parent_link_;
+
+    ros::WallDuration(0.1).sleep();
+    pub_attach_collision_obj_.publish(aco);
+    ros::WallDuration(0.1).sleep();
+    pub_attach_collision_obj_.publish(aco);
+
+  }
+
+  void publishCollisionBlock(geometry_msgs::Pose block_pose, std::string block_name, double block_size)
+  {
+    moveit_msgs::CollisionObject collision_obj;
+    collision_obj.header.stamp = ros::Time::now();
+    collision_obj.header.frame_id = base_link_;
+    collision_obj.id = block_name;
+    collision_obj.operation = moveit_msgs::CollisionObject::ADD;
+    collision_obj.primitives.resize(1);
+    collision_obj.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+    collision_obj.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = block_size;
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = block_size;
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = block_size;
+    collision_obj.primitive_poses.resize(1);
+    collision_obj.primitive_poses[0] = block_pose;
+
+    //ROS_INFO_STREAM_NAMED("pick_place","CollisionObject: \n " << collision_obj);
+
+    pub_collision_obj_.publish(collision_obj);
+
+    ROS_DEBUG_STREAM_NAMED("simple_pick_place","Published collision object " << block_name);
+  }
+
+  void publishCollisionWall(double x, double y, double angle, double width, const std::string name)
+  {
+    moveit_msgs::CollisionObject collision_obj;
+    collision_obj.header.stamp = ros::Time::now();
+    collision_obj.header.frame_id = base_link_;
+    collision_obj.operation = moveit_msgs::CollisionObject::ADD;
+    collision_obj.primitives.resize(1);
+    collision_obj.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+    collision_obj.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+
+    geometry_msgs::Pose rec_pose;
+
+    // ----------------------------------------------------------------------------------
+    // Name
+    collision_obj.id = name;
+
+    double depth = 0.1;
+    double height = 2.5;
+
+    // Position
+    rec_pose.position.x = x;
+    rec_pose.position.y = y;
+    rec_pose.position.z = height / 2 + floor_to_base_height_;
+
+    // Size
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = depth;
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = width;
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = height;
+    // ----------------------------------------------------------------------------------
+
+    Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitZ()));
+    rec_pose.orientation.x = quat.x();
+    rec_pose.orientation.y = quat.y();
+    rec_pose.orientation.z = quat.z();
+    rec_pose.orientation.w = quat.w();
+
+    collision_obj.primitive_poses.resize(1);
+    collision_obj.primitive_poses[0] = rec_pose;
+
+    pub_collision_obj_.publish(collision_obj);
+  }
+
+  void publishCollisionTable(double x, double y, double angle, double width, double height,
+    double depth, const std::string name)
+  {
+    geometry_msgs::Pose table_pose;
+
+    // Position
+    table_pose.position.x = x;
+    table_pose.position.y = y;
+    table_pose.position.z = height / 2 + floor_to_base_height_;
+
+    // Orientation
+    Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitZ()));
+    table_pose.orientation.x = quat.x();
+    table_pose.orientation.y = quat.y();
+    table_pose.orientation.z = quat.z();
+    table_pose.orientation.w = quat.w();
+
+    moveit_msgs::CollisionObject collision_obj;
+    collision_obj.header.stamp = ros::Time::now();
+    collision_obj.header.frame_id = base_link_;
+    collision_obj.id = name;
+    collision_obj.operation = moveit_msgs::CollisionObject::ADD;
+    collision_obj.primitives.resize(1);
+    collision_obj.primitives[0].type = shape_msgs::SolidPrimitive::BOX;
+    collision_obj.primitives[0].dimensions.resize(shape_tools::SolidPrimitiveDimCount<shape_msgs::SolidPrimitive::BOX>::value);
+
+    // Size
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_X] = depth;
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Y] = width;
+    collision_obj.primitives[0].dimensions[shape_msgs::SolidPrimitive::BOX_Z] = height;
+
+    collision_obj.primitive_poses.resize(1);
+    collision_obj.primitive_poses[0] = table_pose;
+
+    pub_collision_obj_.publish(collision_obj);
   }
 
 
