@@ -40,9 +40,6 @@
 // Blocks
 #include <block_grasp_generator/block_grasp_generator.h> // has datastructure
 
-// Msgs
-#include <baxter_msgs/GripperState.h>
-
 namespace baxter_pick_place
 {
 
