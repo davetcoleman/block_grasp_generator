@@ -34,7 +34,7 @@
 
 /* Author: Dave Coleman
    Desc:   Parameters specific to Baxter for performing pick-place
-           THIS IS A COPIED VERSION FROM baxter_pick_place PACKAGE!
+   THIS IS A COPIED VERSION FROM baxter_pick_place PACKAGE!
 */
 
 // Blocks
@@ -49,7 +49,7 @@ static const std::string EE_GROUP = "right_hand";
 static const std::string EE_JOINT = "right_gripper_l_finger_joint";
 static const std::string EE_PARENT_LINK = "right_wrist";
 
-// Copied from URDF \todo read straight from URDF? 
+// Copied from URDF \todo read straight from URDF?
 static const double FINGER_JOINT_UPPER = 0.0095; //open
 static const double FINGER_JOINT_LOWER = -0.0125; //close
 
@@ -59,6 +59,23 @@ static const double FLOOR_TO_BASE_HEIGHT = -0.9;
 block_grasp_generator::RobotGraspData loadRobotGraspData(double block_size)
 {
   block_grasp_generator::RobotGraspData grasp_data;
+
+  // -------------------------------
+  // Convert generic grasp pose to this end effector's frame of reference
+  // I think this is kind of the same as the "approach direction"
+
+  // Orientation
+  double angle = M_PI / 2;  // turn on Z axis
+  Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitY()));
+  grasp_data.grasp_pose_to_eef_pose_.orientation.x = quat.x();
+  grasp_data.grasp_pose_to_eef_pose_.orientation.y = quat.y();
+  grasp_data.grasp_pose_to_eef_pose_.orientation.z = quat.z();
+  grasp_data.grasp_pose_to_eef_pose_.orientation.w = quat.w();
+
+  // Position
+  grasp_data.grasp_pose_to_eef_pose_.position.x = -0.15;
+  grasp_data.grasp_pose_to_eef_pose_.position.y = 0;
+  grasp_data.grasp_pose_to_eef_pose_.position.z = 0;
 
   // -------------------------------
   // Create pre-grasp posture (Gripper open)

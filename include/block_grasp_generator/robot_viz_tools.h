@@ -54,6 +54,8 @@
 // Boost
 #include <boost/shared_ptr.hpp>
 
+// Messages
+#include <std_msgs/ColorRGBA.h>
 
 namespace block_grasp_generator
 {
@@ -61,6 +63,8 @@ namespace block_grasp_generator
 static const std::string ROBOT_DESCRIPTION="robot_description";
 static const std::string COLLISION_TOPIC = "/collision_object";
 static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object";
+
+enum rviz_colors { RED, GREEN, BLUE, GREY };
 
 class RobotVizTools
 {
@@ -92,7 +96,7 @@ private:
   // End Effector Markers
   visualization_msgs::MarkerArray marker_array_;
   tf::Pose tf_root_to_link_;
-  geometry_msgs::Pose grasp_pose_to_eef_pose_;
+  //  geometry_msgs::Pose grasp_pose_to_eef_pose_;
   std::vector<geometry_msgs::Pose> marker_poses_;
 
   // Whether to actually publish to rviz or not
@@ -198,32 +202,32 @@ public:
    * \param joint_values - the in-order list of values to set the robot's joints
    * \return true if it is successful
    *
-  bool publishPlanningScene(std::vector<double> joint_values)
-  {
-    if(muted_)
-      return true; // this function will only work if we have loaded the publishers
+   bool publishPlanningScene(std::vector<double> joint_values)
+   {
+   if(muted_)
+   return true; // this function will only work if we have loaded the publishers
 
-    // Load planning scene monitor if one was not already passed in
-    if(!planning_scene_monitor_)
-      if(!loadPlanningSceneMonitor())
-        return false;
+   // Load planning scene monitor if one was not already passed in
+   if(!planning_scene_monitor_)
+   if(!loadPlanningSceneMonitor())
+   return false;
 
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing planning scene");
+   ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing planning scene");
 
-    // Output debug
-    //ROS_INFO_STREAM_NAMED("robot_viz","Joint values being sent to planning scene:");
-    //std::copy(joint_values.begin(),joint_values.end(), std::ostream_iterator<double>(std::cout, "\n"));
+   // Output debug
+   //ROS_INFO_STREAM_NAMED("robot_viz","Joint values being sent to planning scene:");
+   //std::copy(joint_values.begin(),joint_values.end(), std::ostream_iterator<double>(std::cout, "\n"));
 
-    // Update planning scene
-    robot_state::JointStateGroup* joint_state_group = planning_scene_monitor_->getPlanningScene()->getCurrentStateNonConst()
-      .getJointStateGroup(planning_group_name_);
-    joint_state_group->setVariableValues(joint_values);
+   // Update planning scene
+   robot_state::JointStateGroup* joint_state_group = planning_scene_monitor_->getPlanningScene()->getCurrentStateNonConst()
+   .getJointStateGroup(planning_group_name_);
+   joint_state_group->setVariableValues(joint_values);
 
-    //    planning_scene_monitor_->updateFrameTransforms();
-    planning_scene_monitor_->triggerSceneUpdateEvent(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
+   //    planning_scene_monitor_->updateFrameTransforms();
+   planning_scene_monitor_->triggerSceneUpdateEvent(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE);
 
-    return true;
-  }
+   return true;
+   }
   */
 
   /**
@@ -241,11 +245,7 @@ public:
     // Get end effector group
 
     // Create color to use for EE markers
-    std_msgs::ColorRGBA marker_color;
-    marker_color.r = 1.0;
-    marker_color.g = 1.0;
-    marker_color.b = 1.0;
-    marker_color.a = 0.85;
+    std_msgs::ColorRGBA marker_color = getColor( GREY );
 
     // Get robot state
     robot_model::RobotModelConstPtr robot_model = planning_scene_monitor_->getRobotModel();
@@ -262,7 +262,7 @@ public:
 
     // Get link names that are in end effector
     const std::vector<std::string> &ee_link_names = joint_model_group->getLinkModelNames();
-      
+
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of links in group " << ee_group_name_ << ": " << ee_link_names.size());
 
     // Robot Interaction - finds the end effector associated with a planning group
@@ -272,9 +272,9 @@ public:
     robot_interaction.decideActiveEndEffectors(planning_group_name_);
 
     // Get active EE
-    std::vector<robot_interaction::RobotInteraction::EndEffector> active_eef = 
+    std::vector<robot_interaction::RobotInteraction::EndEffector> active_eef =
       robot_interaction.getActiveEndEffectors();
-      
+
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of active end effectors: " << active_eef.size());
     if( !active_eef.size() )
     {
@@ -304,13 +304,11 @@ public:
     }
     ROS_ERROR_STREAM_NAMED("temp","eef parent link = "<< ee_parent_link_);
 
+    /*
     // Offset from gasp_pose to end effector
     static const double X_OFFSET = 0; //-0.15;
-
     // Allow a transform from our pose to the end effector position
-
     // TODO: make this more generic for arbitrary grippers
-
     // Orientation
     double angle = 0; //M_PI / 2;  // turn on Z axis
     Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitY()));
@@ -321,6 +319,7 @@ public:
     grasp_pose_to_eef_pose_.orientation.y = quat.y();
     grasp_pose_to_eef_pose_.orientation.z = quat.z();
     grasp_pose_to_eef_pose_.orientation.w = quat.w();
+    */
 
     // Copy original marker poses to a vector
     for (std::size_t i = 0 ; i < marker_array_.markers.size() ; ++i)
@@ -340,14 +339,16 @@ public:
     if(muted_)
       return true;
 
-    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing end effector markers");
-
     //ROS_INFO_STREAM("Mesh (" << grasp_pose.position.x << ","<< grasp_pose.position.y << ","<< grasp_pose.position.z << ")");
 
     // -----------------------------------------------------------------------------------------------
     // Process each link of the end effector
     for (std::size_t i = 0 ; i < marker_array_.markers.size() ; ++i)
     {
+      // Make sure ROS is still spinning
+      if( !ros::ok() )
+        break;
+
       // Header
       marker_array_.markers[i].header.frame_id = base_link_;
       marker_array_.markers[i].header.stamp = ros::Time::now();
@@ -365,7 +366,7 @@ public:
       // Do some math for the offset
       // grasp_pose             - our generated grasp
       // markers[i].pose        - an ee link's pose relative to the whole end effector
-      // grasp_pose_to_eef_pose_ - the offset from the grasp pose to eef_pose - probably nothing
+      // REMOVED grasp_pose_to_eef_pose_ - the offset from the grasp pose to eef_pose - probably nothing
       tf::Pose tf_root_to_marker;
       tf::Pose tf_root_to_mesh;
       tf::Pose tf_pose_to_eef;
@@ -373,12 +374,13 @@ public:
       // Simple conversion from geometry_msgs::Pose to tf::Pose
       tf::poseMsgToTF(grasp_pose, tf_root_to_marker);
       tf::poseMsgToTF(marker_poses_[i], tf_root_to_mesh);
-      tf::poseMsgToTF(grasp_pose_to_eef_pose_, tf_pose_to_eef);
+      // tf::poseMsgToTF(grasp_pose_to_eef_pose_, tf_pose_to_eef); // \todo REMOVE
 
       // Conversions
       tf::Pose tf_eef_to_mesh = tf_root_to_link_.inverse() * tf_root_to_mesh;
-      tf::Pose tf_marker_to_mesh = tf_pose_to_eef * tf_eef_to_mesh;
-      tf::Pose tf_root_to_mesh_new = tf_root_to_marker * tf_marker_to_mesh;
+      // REMOVED tf::Pose tf_marker_to_mesh = tf_pose_to_eef * tf_eef_to_mesh;
+      //tf::Pose tf_root_to_mesh_new = tf_root_to_marker * tf_marker_to_mesh;
+      tf::Pose tf_root_to_mesh_new = tf_root_to_marker * tf_eef_to_mesh;
       tf::poseTFToMsg(tf_root_to_mesh_new, marker_array_.markers[i].pose);
       // -----------------------------------------------------------------------------------------------
 
@@ -386,6 +388,7 @@ public:
 
       rviz_marker_pub_.publish( marker_array_.markers[i] );
       ros::Duration(0.05).sleep();  // Sleep to prevent markers from being 'skipped' in rviz
+      ros::Duration(1).sleep();  // temp
     }
 
     return true;
@@ -432,18 +435,10 @@ public:
     marker.scale.y = 0.001;
     marker.scale.z = 0.001;
 
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 0.0;
-    marker.color.a = 1.0;
+    marker.color = getColor( RED );
 
     // Make line color
-    std_msgs::ColorRGBA color;
-    color.r = 0.8;
-    color.g = 0.1;
-    color.b = 0.1;
-    color.a = 1.0;
-
+    std_msgs::ColorRGBA color = getColor( RED );
 
     // Point
     geometry_msgs::Point point_a;
@@ -502,17 +497,10 @@ public:
     marker.scale.y = 0.01;
     marker.scale.z = 0.01;
 
-    marker.color.r = 0.0;
-    marker.color.g = 0.0;
-    marker.color.b = 1.0;
-    marker.color.a = 1.0;
+    marker.color = getColor( BLUE );
 
     // Make line color
-    std_msgs::ColorRGBA color;
-    color.r = 0.1;
-    color.g = 0.1;
-    color.b = 0.8;
-    color.a = 1.0;
+    std_msgs::ColorRGBA color = getColor( BLUE );
 
     // Point
     geometry_msgs::Point point_a;
@@ -533,7 +521,7 @@ public:
    * \brief Publish an marker of an arrow to rviz
    * \return true if it is successful
    */
-  bool publishArrow(const geometry_msgs::Pose &pose)
+  bool publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color = BLUE)
   {
     if(muted_)
       return true;
@@ -565,10 +553,7 @@ public:
     marker.scale.y = 0.005; // arrow height
     marker.scale.z = 0.005; // arrow length
 
-    marker.color.r = 0.0;
-    marker.color.g = 0.0;
-    marker.color.b = 1.0;
-    marker.color.a = 1.0;
+    marker.color = getColor(color);
 
     marker.lifetime = marker_lifetime_;
 
@@ -617,17 +602,13 @@ public:
     // Set marker color
     if(isRed)
     {
-      marker.color.r = 1.0;
-      marker.color.g = 0.0;
-      marker.color.b = 0.0;
+      marker.color = getColor( RED );
     }
     else
     {
-      marker.color.r = 0.0;
-      marker.color.g = 1.0;
-      marker.color.b = 0.0;
+      marker.color = getColor( GREEN );
     }
-    marker.color.a = 0.5;
+
 
     marker.lifetime = marker_lifetime_;
 
@@ -835,6 +816,42 @@ public:
     collision_obj.primitive_poses[0] = table_pose;
 
     pub_collision_obj_.publish(collision_obj);
+  }
+
+  /**
+   * \brief Get the RGB value of standard colors
+   * \param color - a enum pre-defined name of a color
+   * \return the RGB message equivalent
+   */
+  std_msgs::ColorRGBA getColor(const rviz_colors &color)
+  {
+    std_msgs::ColorRGBA result;
+    result.a = 0.8;
+    switch(color)
+    {
+    case RED:
+      result.r = 0.8;
+      result.g = 0.1;
+      result.b = 0.1;      
+      break;
+    case GREEN:
+      result.r = 0.1;
+      result.g = 0.8;
+      result.b = 0.1;      
+      break;
+    case GREY:
+      result.r = 1.0;
+      result.g = 1.0;
+      result.b = 1.0;
+      break;
+    case BLUE:
+    default:
+      result.r = 0.1;
+      result.g = 0.1;
+      result.b = 0.8;
+    }
+
+    return result;
   }
 
 

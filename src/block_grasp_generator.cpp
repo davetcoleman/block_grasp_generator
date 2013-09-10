@@ -169,40 +169,36 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
     // Grasp ------------------------------------------------------------------------------------------------
 
-    // TESTING - TODO - remove this - really? maybe keep it
 
-    // Change grasp to frame of reference of end effector
+    // TEMP - show original grasp pose
     {
-      geometry_msgs::Pose grasp_pose_to_eef_pose_;
-
-      // Orientation
-      double angle = M_PI / 2;  // turn on Z axis
-      Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitY()));
-      grasp_pose_to_eef_pose_.orientation.x = quat.x();
-      grasp_pose_to_eef_pose_.orientation.y = quat.y();
-      grasp_pose_to_eef_pose_.orientation.z = quat.z();
-      grasp_pose_to_eef_pose_.orientation.w = quat.w();
-
-      // Position
-      grasp_pose_to_eef_pose_.position.x = -0.15;
-      grasp_pose_to_eef_pose_.position.y = 0;
-      grasp_pose_to_eef_pose_.position.z = 0;
-
-      // Convert to Eigen
-      Eigen::Affine3d eef_conversion_pose;
-      tf::poseMsgToEigen(grasp_pose_to_eef_pose_, eef_conversion_pose);
-
-      // Transform the grasp pose
-      // grasp_pose_msg.pose = grasp_pose_msg.pose * grasp_pose_to_eef_pose_;
-      grasp_pose = grasp_pose * eef_conversion_pose;
+      tf::poseEigenToMsg(block_global_transform_ * grasp_pose, grasp_pose_msg.pose);
+      rviz_tools_->publishArrow(grasp_pose_msg.pose, GREEN);
     }
 
+    // Test 2
+    /*
+    {
+      geometry_msgs::Pose grasp_pose_temp;
+      tf::poseEigenToMsg(block_global_transform_, grasp_pose_temp);
+      //ROS_ERROR_STREAM_NAMED("temp","block pose " << grasp_pose_temp);
+      rviz_tools_->publishArrow(grasp_pose_temp, RED);
+    }
+    */
+
+    // ------------------------------------------------------------------------
+    // Change grasp to frame of reference of this custom end effector
+
+    // Convert to Eigen
+    Eigen::Affine3d eef_conversion_pose;
+    tf::poseMsgToEigen(grasp_data.grasp_pose_to_eef_pose_, eef_conversion_pose);
+
+    // Transform the grasp pose
+    grasp_pose = grasp_pose * eef_conversion_pose;
+
+    // ------------------------------------------------------------------------
     // Convert pose to global frame (base_link)
     tf::poseEigenToMsg(block_global_transform_ * grasp_pose, grasp_pose_msg.pose);
-
-    // TEMP
-    //rviz_tools_->publishArrow(grasp_pose_msg.pose);
-
 
     // The position of the end-effector for the grasp relative to a reference frame (that is always specified elsewhere, not in this message)
     new_grasp.grasp_pose = grasp_pose_msg;
@@ -374,7 +370,7 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
     ROS_DEBUG_STREAM_NAMED("grasp","Visualizing grasp pose " << i);
 
     rviz_tools_->publishSphere(grasp_it->grasp_pose.pose);
-    rviz_tools_->publishArrow(grasp_it->grasp_pose.pose);
+    rviz_tools_->publishArrow(grasp_it->grasp_pose.pose, BLUE);
     rviz_tools_->publishEEMarkers(grasp_it->grasp_pose.pose);
 
     //ROS_INFO_STREAM_NAMED("","Grasp: \n" << grasp_it->grasp_pose.pose);

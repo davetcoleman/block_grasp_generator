@@ -94,12 +94,12 @@ public:
     // Load the Robot Viz Tools for publishing to Rviz
     rviz_tools_.reset(new block_grasp_generator::RobotVizTools(RVIZ_MARKER_TOPIC, baxter_pick_place::EE_GROUP, 
         PLANNING_GROUP_NAME, baxter_pick_place::BASE_LINK, 0));
-    rviz_tools_->setLifetime(30.0);
+    rviz_tools_->setLifetime(120.0);
     rviz_tools_->setMuted(false);
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp generator
-    baxter_pick_place::loadRobotGraspData(BLOCK_SIZE); // Load robot specific data for baxter
+    grasp_data_ = baxter_pick_place::loadRobotGraspData(BLOCK_SIZE); // Load robot specific data for baxter
     block_grasp_generator_.reset( new block_grasp_generator::BlockGraspGenerator(rviz_tools_) );
 
     // ---------------------------------------------------------------------------------------------

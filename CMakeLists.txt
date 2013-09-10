@@ -17,6 +17,7 @@ find_package(catkin REQUIRED
   moveit_core
   tf
   tf_conversions
+  std_msgs
 )
 
 # Grasp Generator Library
@@ -49,6 +50,7 @@ catkin_package(
     moveit_core
     tf
     tf_conversions
+    std_msgs
   INCLUDE_DIRS include
 )
 

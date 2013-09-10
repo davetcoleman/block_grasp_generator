@@ -71,8 +71,9 @@ struct RobotGraspData
     approach_retreat_min_dist_(0.4),
     block_size_(0.04)
   {}
-  sensor_msgs::JointState pre_grasp_posture_;
-  sensor_msgs::JointState grasp_posture_;
+  geometry_msgs::Pose grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
+  sensor_msgs::JointState pre_grasp_posture_; // when the end effector is in "open" position
+  sensor_msgs::JointState grasp_posture_; // when the end effector is in "close" position
   std::string base_link_; // name of global frame with z pointing up
   std::string ee_parent_link_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
   double grasp_depth_; // distance from center point of object to end effector
