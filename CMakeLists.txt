@@ -66,10 +66,6 @@ include_directories(
 link_directories(${catkin_LIBRARY_DIRS})
 
 # Test executable
-add_executable(block_grasp_generator_test src/block_grasp_generator_test.cpp)
-target_link_libraries(block_grasp_generator_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator)
-
-# Test executable
 add_executable(grasp_filter_test src/grasp_filter_test.cpp)
 target_link_libraries(grasp_filter_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator ${PROJECT_NAME}_grasp_filter)
 

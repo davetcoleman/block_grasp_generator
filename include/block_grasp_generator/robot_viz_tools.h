@@ -64,7 +64,7 @@ static const std::string ROBOT_DESCRIPTION="robot_description";
 static const std::string COLLISION_TOPIC = "/collision_object";
 static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object";
 
-enum rviz_colors { RED, GREEN, BLUE, GREY };
+enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE };
 
 class RobotVizTools
 {
@@ -94,13 +94,19 @@ private:
   ros::Duration marker_lifetime_;
 
   // End Effector Markers
-  visualization_msgs::MarkerArray marker_array_;
+  visualization_msgs::MarkerArray ee_marker_array_;
   tf::Pose tf_root_to_link_;
   //  geometry_msgs::Pose grasp_pose_to_eef_pose_;
   std::vector<geometry_msgs::Pose> marker_poses_;
 
   // Whether to actually publish to rviz or not
   bool muted_;
+
+  // Cached Rviz markers
+  visualization_msgs::Marker arrow_marker_;
+  visualization_msgs::Marker sphere_marker_;
+  visualization_msgs::Marker block_marker_;
+  visualization_msgs::Marker text_marker_;
 
 public:
 
@@ -149,6 +155,8 @@ public:
     ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing attached collision objects on topic "
       << ATTACHED_COLLISION_TOPIC);
 
+    loadRvizMarkers();
+
     // Wait
     ros::spinOnce();
     ros::Duration(0.1).sleep(); // TODO: better way of doing this?
@@ -159,6 +167,78 @@ public:
    */
   ~RobotVizTools()
   {
+  }
+
+  /**
+   * \brief Pre-load rviz markers for better efficiency
+   */
+  void loadRvizMarkers()
+  {
+    // Load arrow ----------------------------------------------------
+
+    arrow_marker_.header.frame_id = base_link_;
+    // Set the namespace and id for this marker.  This serves to create a unique ID
+    arrow_marker_.ns = "Arrow";
+    // Set the marker type.
+    arrow_marker_.type = visualization_msgs::Marker::ARROW;
+    // Set the marker action.  Options are ADD and DELETE
+    arrow_marker_.action = visualization_msgs::Marker::ADD;
+    // Size
+    arrow_marker_.scale.x = 0.05; //0.025; // arrow width - but i would call this the length
+    arrow_marker_.scale.y = 0.005; // arrow height
+    arrow_marker_.scale.z = 0.005; // arrow length
+    // Lifetime
+    arrow_marker_.lifetime = marker_lifetime_;
+
+    // Load Block ----------------------------------------------------
+    block_marker_.header.frame_id = base_link_;
+    // Set the namespace and id for this marker.  This serves to create a unique ID
+    block_marker_.ns = "Block";
+    // Set the marker action.  Options are ADD and DELETE
+    block_marker_.action = visualization_msgs::Marker::ADD;
+    // Set the marker type.
+    block_marker_.type = visualization_msgs::Marker::CUBE;
+    // Lifetime
+    block_marker_.lifetime = marker_lifetime_;
+
+    // Load Sphere -------------------------------------------------
+    sphere_marker_.header.frame_id = base_link_;
+    // Set the namespace and id for this marker.  This serves to create a unique ID
+    sphere_marker_.ns = "Sphere";
+    // Set the marker type.
+    sphere_marker_.type = visualization_msgs::Marker::SPHERE_LIST;
+    // Set the marker action.  Options are ADD and DELETE
+    sphere_marker_.action = visualization_msgs::Marker::ADD;
+    // Marker group position and orientation
+    sphere_marker_.pose.position.x = 0;
+    sphere_marker_.pose.position.y = 0;
+    sphere_marker_.pose.position.z = 0;
+    sphere_marker_.pose.orientation.x = 0.0;
+    sphere_marker_.pose.orientation.y = 0.0;
+    sphere_marker_.pose.orientation.z = 0.0;
+    sphere_marker_.pose.orientation.w = 1.0;
+    // Sphere size
+    sphere_marker_.scale.x = 0.01;
+    sphere_marker_.scale.y = 0.01;
+    sphere_marker_.scale.z = 0.01;
+    // Color
+    sphere_marker_.color = getColor( BLUE );
+    // Create a sphere point
+    geometry_msgs::Point point_a;
+    // Add the point pair to the line message
+    sphere_marker_.points.push_back( point_a );
+    sphere_marker_.colors.push_back( getColor( BLUE ) );
+
+    // Load Text ----------------------------------------------------
+    text_marker_.header.frame_id = base_link_;
+    // Set the namespace and id for this marker.  This serves to create a unique ID
+    text_marker_.ns = "Text";
+    // Set the marker action.  Options are ADD and DELETE
+    text_marker_.action = visualization_msgs::Marker::ADD;
+    // Set the marker type.
+    text_marker_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    // Lifetime
+    text_marker_.lifetime = marker_lifetime_;
   }
 
   /**
@@ -288,8 +368,8 @@ public:
     // -----------------------------------------------------------------------------------------------
     // Get EE link markers for Rviz
     robot_state::RobotState robot_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
-    robot_state.getRobotMarkers(marker_array_, ee_link_names, marker_color, eef.eef_group, ros::Duration());
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Number of rviz markers in end effector: " << marker_array_.markers.size());
+    robot_state.getRobotMarkers(ee_marker_array_, ee_link_names, marker_color, eef.eef_group, ros::Duration());
+    ROS_DEBUG_STREAM_NAMED("robot_viz","Number of rviz markers in end effector: " << ee_marker_array_.markers.size());
 
     // Change pose from Eigen to TF
     try
@@ -322,9 +402,9 @@ public:
     */
 
     // Copy original marker poses to a vector
-    for (std::size_t i = 0 ; i < marker_array_.markers.size() ; ++i)
+    for (std::size_t i = 0 ; i < ee_marker_array_.markers.size() ; ++i)
     {
-      marker_poses_.push_back( marker_array_.markers[i].pose );
+      marker_poses_.push_back( ee_marker_array_.markers[i].pose );
     }
 
     return true;
@@ -343,23 +423,23 @@ public:
 
     // -----------------------------------------------------------------------------------------------
     // Process each link of the end effector
-    for (std::size_t i = 0 ; i < marker_array_.markers.size() ; ++i)
+    for (std::size_t i = 0 ; i < ee_marker_array_.markers.size() ; ++i)
     {
       // Make sure ROS is still spinning
       if( !ros::ok() )
         break;
 
       // Header
-      marker_array_.markers[i].header.frame_id = base_link_;
-      marker_array_.markers[i].header.stamp = ros::Time::now();
+      ee_marker_array_.markers[i].header.frame_id = base_link_;
+      ee_marker_array_.markers[i].header.stamp = ros::Time::now();
 
       // Options
-      marker_array_.markers[i].lifetime = marker_lifetime_;
+      ee_marker_array_.markers[i].lifetime = marker_lifetime_;
 
       // Options for meshes
-      if( marker_array_.markers[i].type == visualization_msgs::Marker::MESH_RESOURCE )
+      if( ee_marker_array_.markers[i].type == visualization_msgs::Marker::MESH_RESOURCE )
       {
-        marker_array_.markers[i].mesh_use_embedded_materials = true;
+        ee_marker_array_.markers[i].mesh_use_embedded_materials = true;
       }
 
       // -----------------------------------------------------------------------------------------------
@@ -381,14 +461,13 @@ public:
       // REMOVED tf::Pose tf_marker_to_mesh = tf_pose_to_eef * tf_eef_to_mesh;
       //tf::Pose tf_root_to_mesh_new = tf_root_to_marker * tf_marker_to_mesh;
       tf::Pose tf_root_to_mesh_new = tf_root_to_marker * tf_eef_to_mesh;
-      tf::poseTFToMsg(tf_root_to_mesh_new, marker_array_.markers[i].pose);
+      tf::poseTFToMsg(tf_root_to_mesh_new, ee_marker_array_.markers[i].pose);
       // -----------------------------------------------------------------------------------------------
 
-      ROS_INFO_STREAM("Marker " << i << ":\n" << marker_array_.markers[i]);
+      //ROS_INFO_STREAM("Marker " << i << ":\n" << ee_marker_array_.markers[i]);
 
-      rviz_marker_pub_.publish( marker_array_.markers[i] );
-      ros::Duration(0.05).sleep();  // Sleep to prevent markers from being 'skipped' in rviz
-      ros::Duration(1).sleep();  // temp
+      rviz_marker_pub_.publish( ee_marker_array_.markers[i] );
+      ros::Duration(0.01).sleep();  // Sleep to prevent markers from being 'skipped' in rviz
     }
 
     return true;
@@ -467,52 +546,19 @@ public:
     if(muted_)
       return true; // this function will only work if we have loaded the publishers
 
-    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing sphere");
-
-    visualization_msgs::Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-    marker.header.frame_id = base_link_;
-    marker.header.stamp = ros::Time::now();
+    sphere_marker_.header.stamp = ros::Time::now();
 
-    // Set the namespace and id for this marker.  This serves to create a unique ID
-    marker.ns = "Sphere";
+    static int id = 0;
+    sphere_marker_.id = ++id;
 
-    // Set the marker type.
-    marker.type = visualization_msgs::Marker::SPHERE_LIST;
+    sphere_marker_.lifetime = marker_lifetime_;
 
-    // Set the marker action.  Options are ADD and DELETE
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.id = 0;
-
-    marker.pose.position.x = 0;
-    marker.pose.position.y = 0;
-    marker.pose.position.z = 0;
-
-    marker.pose.orientation.x = 0.0;
-    marker.pose.orientation.y = 0.0;
-    marker.pose.orientation.z = 0.0;
-    marker.pose.orientation.w = 1.0;
-
-    marker.scale.x = 0.01;
-    marker.scale.y = 0.01;
-    marker.scale.z = 0.01;
-
-    marker.color = getColor( BLUE );
-
-    // Make line color
-    std_msgs::ColorRGBA color = getColor( BLUE );
-
-    // Point
-    geometry_msgs::Point point_a;
-    point_a = pose.position;
-    //ROS_INFO_STREAM("Publishing marker \n" << point_a );
-
-    // Add the point pair to the line message
-    marker.points.push_back( point_a );
-    marker.colors.push_back( color );
-
-
-    rviz_marker_pub_.publish( marker );
+    // Update the single point with new pose
+    sphere_marker_.points[0] = pose.position;
+    
+    // Publish
+    rviz_marker_pub_.publish( sphere_marker_ );
 
     return true;
   }
@@ -526,39 +572,18 @@ public:
     if(muted_)
       return true;
 
-    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing arrow");
-
-    //ROS_INFO_STREAM("Arrow (" << pose.position.x << ","<< pose.position.y << ","<< pose.position.z << ")");
-
-    visualization_msgs::Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-    marker.header.frame_id = base_link_;
-    marker.header.stamp = ros::Time::now();
-
-    // Set the namespace and id for this marker.  This serves to create a unique ID
-    marker.ns = "Arrow";
-
-    // Set the marker type.
-    marker.type = visualization_msgs::Marker::ARROW;
-
-    // Set the marker action.  Options are ADD and DELETE
-    marker.action = visualization_msgs::Marker::ADD;
+    arrow_marker_.header.stamp = ros::Time::now();
 
     static int id = 0;
-    marker.id = ++id;
+    arrow_marker_.id = ++id;
 
-    marker.pose = pose;
+    arrow_marker_.pose = pose;
 
-    marker.scale.x = 0.05; //0.025; // arrow width - but i would call this the length
-    marker.scale.y = 0.005; // arrow height
-    marker.scale.z = 0.005; // arrow length
+    arrow_marker_.color = getColor(color);
 
-    marker.color = getColor(color);
-
-    marker.lifetime = marker_lifetime_;
-
-    rviz_marker_pub_.publish( marker );
-    ros::Duration(0.01).sleep(); // Sleep to prevent markers from being 'skipped' in rviz
+    rviz_marker_pub_.publish( arrow_marker_ );
+    //    ros::Duration(0.01).sleep(); // Sleep to prevent markers from being 'skipped' in rviz
 
     return true;
   }
@@ -567,54 +592,63 @@ public:
    * \brief Publish an marker of a block to Rviz
    * \return true if it is successful
    */
-  bool publishBlock(const geometry_msgs::Pose &pose, const double& block_size, bool isRed)
+  bool publishBlock(const geometry_msgs::Pose &pose, const double &block_size, const bool isRed)
   {
     if(muted_)
       return true;
 
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing block");
+    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing block");
 
-    visualization_msgs::Marker marker;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-    marker.header.frame_id = base_link_;
-    marker.header.stamp = ros::Time::now();
-
-    // Set the namespace and id for this marker.  This serves to create a unique ID
-    marker.ns = "Block";
+    // Set the timestamp
+    block_marker_.header.stamp = ros::Time::now();
 
     static int id = 0;
-    marker.id = ++id;
-
-    // Set the marker action.  Options are ADD and DELETE
-    marker.action = visualization_msgs::Marker::ADD;
+    block_marker_.id = ++id;
 
     // Set the pose
-    marker.pose = pose;
-
-    // Set the marker type.
-    marker.type = visualization_msgs::Marker::CUBE;
+    block_marker_.pose = pose;
 
     // Set marker size
-    marker.scale.x = block_size;
-    marker.scale.y = block_size;
-    marker.scale.z = block_size;
+    block_marker_.scale.x = block_size;
+    block_marker_.scale.y = block_size;
+    block_marker_.scale.z = block_size;
 
     // Set marker color
     if(isRed)
     {
-      marker.color = getColor( RED );
+      block_marker_.color = getColor( RED );
     }
     else
     {
-      marker.color = getColor( GREEN );
+      block_marker_.color = getColor( GREEN );
     }
 
+    rviz_marker_pub_.publish( block_marker_ );
+    //ros::Duration(0.05).sleep(); // Sleep to prevent markers from being 'skipped' in rviz
 
-    marker.lifetime = marker_lifetime_;
+    return true;
+  }
 
-    //ROS_INFO_STREAM("Publishing block with pose \n" << marker );
-    rviz_marker_pub_.publish( marker );
-    ros::Duration(0.05).sleep(); // Sleep to prevent markers from being 'skipped' in rviz
+  /**
+   * \brief Publish an marker of a text to Rviz
+   * \return true if it is successful
+   */
+  bool publishText(const geometry_msgs::Pose &pose, const std::string &text, const rviz_colors &color = WHITE)
+  {
+    if(muted_)
+      return true;
+
+    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing text");
+
+    text_marker_.id = 0;
+
+    text_marker_.header.stamp = ros::Time::now();
+    text_marker_.text = text;
+    text_marker_.pose = pose;
+    text_marker_.color = getColor( color );
+    text_marker_.scale.z = 0.01;    // only z is required (size of an "A")
+
+    rviz_marker_pub_.publish( text_marker_ );
 
     return true;
   }
@@ -840,6 +874,11 @@ public:
       result.b = 0.1;      
       break;
     case GREY:
+      result.r = 0.9;
+      result.g = 0.9;
+      result.b = 0.9;
+      break;
+    case WHITE:
       result.r = 1.0;
       result.g = 1.0;
       result.b = 1.0;

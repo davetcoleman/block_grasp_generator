@@ -75,6 +75,7 @@ bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, 
 bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Grasp>& possible_grasps, grasp_axis_t axis,
   grasp_direction_t direction, const RobotGraspData& grasp_data)
 {
+
   // ---------------------------------------------------------------------------------------------
   // Grasp parameters
 
@@ -110,13 +111,22 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     theta2 = M_PI;
   }
 
+  // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+  // Begin Grasp Generator Loop
+  // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+
   /* Developer Note:
    * Create angles 180 degrees around the chosen axis at given resolution
    * We create the grasps in the reference frame of the block, then later convert it to the base link
    */
   for(int i = 0; i <= grasp_data.angle_resolution_; ++i)
   {
-    // Calculate grasp
+    // Create a Grasp message
+    manipulation_msgs::Grasp new_grasp;
+
+    // Calculate grasp pose
     xb = radius*cos(theta1);
     zb = radius*sin(theta1);
 
@@ -147,12 +157,15 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
       break;
     }
 
+    /* The estimated probability of success for this grasp, or some other measure of how "good" it is.
+     * Here we base bias the score based on how far the wrist is from the surface, preferring a greater
+     * distance to prevent wrist/end effector collision with the table
+     */
+    double score = sin(theta1);
+    new_grasp.grasp_quality = std::max(score,0.1); // don't allow score to drop below 0.1 b/c all grasps are ok
+
     // Calculate the theta1 for next time
     theta1 += M_PI / grasp_data.angle_resolution_;
-
-    // ---------------------------------------------------------------------------------------------
-    // Create a Grasp message
-    manipulation_msgs::Grasp new_grasp;
 
     // A name for this grasp
     static int grasp_id = 0;
@@ -178,12 +191,12 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
     // Test 2
     /*
-    {
+      {
       geometry_msgs::Pose grasp_pose_temp;
       tf::poseEigenToMsg(block_global_transform_, grasp_pose_temp);
       //ROS_ERROR_STREAM_NAMED("temp","block pose " << grasp_pose_temp);
       rviz_tools_->publishArrow(grasp_pose_temp, RED);
-    }
+      }
     */
 
     // ------------------------------------------------------------------------
@@ -205,22 +218,17 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
     // Other ------------------------------------------------------------------------------------------------
 
-    // The estimated probability of success for this grasp, or some other measure of how "good" it is.
-    new_grasp.grasp_quality = 1;
-
     // the maximum contact force to use while grasping (<=0 to disable)
     new_grasp.max_contact_force = 0;
 
-    // an optional list of obstacles that we have semantic information about and that can be touched/pushed/moved in the course of grasping
-    new_grasp.allowed_touch_objects.push_back("Block1");
-    /*new_grasp.allowed_touch_objects.push_back("Block2");
-      new_grasp.allowed_touch_objects.push_back("Block3");
-      new_grasp.allowed_touch_objects.push_back("Block4");*/
-
     // -------------------------------------------------------------------------------------------------------
-    // Approach and retreat - add pose twice to possible grasps - two different approach and retreat motions
+    // -------------------------------------------------------------------------------------------------------
+    // Approach and retreat
+    // -------------------------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------------------------
 
     // Straight down ---------------------------------------------------------------------------------------
+    // With respect to the base link/world frame
 
     // Approach
     gripper_approach.direction.header.frame_id = grasp_data.base_link_;
@@ -236,15 +244,12 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     gripper_retreat.direction.vector.z = 1; // Retreat direction (pos z axis)
     new_grasp.retreat = gripper_retreat;
 
-
-    //ROS_DEBUG_STREAM_NAMED("temp","new grasp: \n " << new_grasp);
-
     // Add to vector
     possible_grasps.push_back(new_grasp);
 
-    /*
     // Angled with pose -------------------------------------------------------------------------------------
-
+    // Approach with respect to end effector orientation
+    /*
     // Approach
     gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_approach.direction.vector.x = 1;
@@ -261,7 +266,8 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
     // Add to vector
     possible_grasps.push_back(new_grasp);
-
+*/
+    /*
     // Guessing -------------------------------------------------------------------------------------
 
     // Approach
@@ -356,23 +362,31 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
 
   ROS_DEBUG_STREAM_NAMED("grasp","Visualizing " << possible_grasps.size() << " grasps");
 
-  rviz_tools_->publishBlock(block_pose, grasp_data.block_size_, false);
-
   int i = 0;
   for(std::vector<manipulation_msgs::Grasp>::const_iterator grasp_it = possible_grasps.begin();
       grasp_it < possible_grasps.end(); ++grasp_it)
   {
-    ++i;
+    if( !ros::ok() )  // Check that ROS is still ok and that user isn't trying to quit
+      break;
+    
+    // Make sure block is still visible
+    rviz_tools_->publishBlock(block_pose, grasp_data.block_size_, false);
 
-    //    if( i % 16)
-    //      continue;
+    ++i;
 
     ROS_DEBUG_STREAM_NAMED("grasp","Visualizing grasp pose " << i);
 
-    rviz_tools_->publishSphere(grasp_it->grasp_pose.pose);
-    rviz_tools_->publishArrow(grasp_it->grasp_pose.pose, BLUE);
-    rviz_tools_->publishEEMarkers(grasp_it->grasp_pose.pose);
-
+    // Animate or just show final position?
+    if( true )
+    {
+      animateGrasp(*grasp_it);
+    }
+    else
+    {
+      rviz_tools_->publishSphere(grasp_it->grasp_pose.pose);
+      rviz_tools_->publishArrow(grasp_it->grasp_pose.pose, BLUE);
+      rviz_tools_->publishEEMarkers(grasp_it->grasp_pose.pose);
+    }
     //ROS_INFO_STREAM_NAMED("","Grasp: \n" << grasp_it->grasp_pose.pose);
 
     // Show robot joint positions if available
@@ -390,5 +404,52 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
     ros::Duration(1.00).sleep();
   }
 }
+
+void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp)
+{
+  /*
+    Eigen::Affine3d grasp_pose;
+    // Convert grasp pose to Eigen affine
+    tf::poseMsgToEigen(grasp_pose_msg.pose, grasp_pose);
+    grasp_pose.translation() = Eigen::Vector3d( direction_scaled.x, direction_scaled.y, direction_scaled.z );
+  */
+
+  ROS_DEBUG_STREAM_NAMED("temp","Original Grasp: \n" << grasp.grasp_pose.pose);
+
+  // Display Grasp Score
+  std::string text = "Grasp Quality: " + boost::lexical_cast<std::string>(int(grasp.grasp_quality*100)) + "%";
+  rviz_tools_->publishText(grasp.grasp_pose.pose, text);
+
+  // Show pre-grasp position
+  geometry_msgs::Pose pre_grasp_pose;
+
+  // Animate the movement
+  for(double percent = 0; percent < 1; percent += 0.05)
+  {
+    if( !ros::ok() )  // Check that ROS is still ok and that user isn't trying to quit
+      break;
+
+    // Calculate the current animation position based on the percent
+    pre_grasp_pose = grasp.grasp_pose.pose;
+    pre_grasp_pose.position.x -= grasp.approach.direction.vector.x * grasp.approach.desired_distance * (1-percent);
+    pre_grasp_pose.position.y -= grasp.approach.direction.vector.y * grasp.approach.desired_distance * (1-percent);
+    pre_grasp_pose.position.z -= grasp.approach.direction.vector.z * grasp.approach.desired_distance * (1-percent);
+
+    //rviz_tools_->publishArrow(pre_grasp_pose, BLUE);
+    rviz_tools_->publishEEMarkers(pre_grasp_pose);
+
+    ros::Duration(0.005).sleep();
+  }
+
+  /*
+  // Show grasp position
+  rviz_tools_->publishSphere(grasp.grasp_pose.pose);
+  rviz_tools_->publishArrow(grasp.grasp_pose.pose, BLUE);
+  rviz_tools_->publishEEMarkers(grasp.grasp_pose.pose);
+
+  ros::Duration(1.00).sleep();
+  */
+}
+
 
 } // namespace

@@ -111,9 +111,20 @@ public:
   bool generateGrasps(const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data,
                       std::vector<manipulation_msgs::Grasp>& possible_grasps);
 
-  // Show all grasps in Rviz
+  /**
+   * \brief Show all grasps in Rviz
+   * \param possible_grasps
+   * \param block_pose
+   * \param grasp_data - custom settings for a robot's geometry
+   */ 
   void visualizeGrasps(const std::vector<manipulation_msgs::Grasp>& possible_grasps,
     const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data);
+
+  /**
+   * \brief Animate the pre grasp, grasp, and post-grasp process - for testing and visualization
+   * \param grasp - a fully completed manipulation message that descibes a grasp
+   */
+  void animateGrasp(const manipulation_msgs::Grasp &grasp);
 
   static void printBlockGraspData(const RobotGraspData& data)
   {
