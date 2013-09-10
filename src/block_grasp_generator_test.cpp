@@ -39,53 +39,35 @@
 // ROS
 #include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
-#include <sensor_msgs/JointState.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
 // MoveIt
-#include <moveit_msgs/MoveGroupAction.h>
-#include <moveit_msgs/DisplayTrajectory.h>
-#include <moveit_msgs/RobotState.h>
-#include <moveit/kinematic_constraints/utils.h>
-#include <moveit/robot_state/robot_state.h>
-#include <moveit/robot_state/conversions.h>
-//#include <moveit/core/robot_state/joint_state_group.h>
-#include <moveit/robot_model_loader/robot_model_loader.h>
-#include <moveit/plan_execution/plan_execution.h>
-#include <moveit/plan_execution/plan_with_sensing.h>
-#include <moveit/trajectory_processing/trajectory_tools.h> // for plan_execution
-#include <moveit/trajectory_processing/iterative_time_parameterization.h>
-
-// Rviz
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+//#include <moveit_msgs/MoveGroupAction.h>
+//#include <moveit_msgs/DisplayTrajectory.h>
+//#include <moveit_msgs/RobotState.h>
+//#include <moveit/kinematic_constraints/utils.h>
+//#include <moveit/robot_state/robot_state.h>
+//#include <moveit/robot_state/conversions.h>
+//#include <moveit/robot_model_loader/robot_model_loader.h>
+//#include <moveit/plan_execution/plan_execution.h>
+//#include <moveit/plan_execution/plan_with_sensing.h>
+//#include <moveit/trajectory_processing/trajectory_tools.h> // for plan_execution
+//#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 // Grasp generation
 #include <block_grasp_generator/block_grasp_generator.h>
 
+// Baxter specific properties
+#include "baxter_data.h"
+
 namespace block_grasp_generator
 {
 
-// ClamArm Specific
-/*
-//static const std::string EE_LINK = "gripper_roll_link";
-static const std::string EE_PARENT_LINK = "gripper_roll_link";
-static const std::string PLANNING_GROUP_NAME = "arm";
-static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
-static const std::string EE_GROUP = "gripper_group";
-static const std::string EE_JOINT = "gripper_finger_joint"; // TODO: remove this dependency!!
-static const std::string BASE_LINK = "/base_link";
-*/
-// Baxter specific
-//static const std::string EE_LINK = "gripper_roll_link";
-static const std::string EE_PARENT_LINK = "right_wrist";
 static const std::string PLANNING_GROUP_NAME = "right_arm";
 static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
-static const std::string EE_GROUP = "right_hand";
-static const std::string EE_JOINT = "right_endpoint";
-static const std::string BASE_LINK = "/base";
-
+static const std::string BLOCK_NAME = "block1";
+static const double BLOCK_SIZE = 0.04;
 
 class GraspGeneratorTest
 {
@@ -108,73 +90,46 @@ public:
   GraspGeneratorTest(int num_tests) :
     nh_("~")
   {
-
     // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
-    rviz_tools_.reset(new block_grasp_generator::RobotVizTools(RVIZ_MARKER_TOPIC, EE_GROUP, PLANNING_GROUP_NAME, BASE_LINK, 0));
-    rviz_tools_->setLifetime(0.0);
+    rviz_tools_.reset(new block_grasp_generator::RobotVizTools(RVIZ_MARKER_TOPIC, baxter_pick_place::EE_GROUP, 
+        PLANNING_GROUP_NAME, baxter_pick_place::BASE_LINK, 0));
+    rviz_tools_->setLifetime(30.0);
     rviz_tools_->setMuted(false);
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp generator
-    loadRobotGraspData(); // Load robot specific data
+    baxter_pick_place::loadRobotGraspData(BLOCK_SIZE); // Load robot specific data for baxter
     block_grasp_generator_.reset( new block_grasp_generator::BlockGraspGenerator(rviz_tools_) );
 
     // ---------------------------------------------------------------------------------------------
     // Generate grasps for a bunch of random blocks
-
     geometry_msgs::Pose block_pose;
     std::vector<manipulation_msgs::Grasp> possible_grasps;
 
+    // Allow ROS to catchup
+    ros::Duration(2.0).sleep();
+
     // Loop
-    for (int i = 0; i < num_tests; ++i)
+    int i = 0;
+    while(ros::ok())
     {
       ROS_INFO_STREAM_NAMED("test","Adding random block " << i+1 << " of " << num_tests);
 
-      generateRandomBlock(block_pose);
-      //getTestBlock(block_pose);
+      //generateRandomBlock(block_pose);
+      generateTestBlock(block_pose);
+
       possible_grasps.clear();
-      bool dual_approach = true; // approach straight down and also from an angle
       block_grasp_generator_->generateGrasps( block_pose, grasp_data_, possible_grasps);
+
+      // Test if done
+      ++i;
+      if( i >= num_tests )
+        break;
     }
   }
 
-  void loadRobotGraspData()
-  {
-    // -------------------------------
-    // Create pre-grasp posture
-    grasp_data_.pre_grasp_posture_.header.frame_id = BASE_LINK;
-    grasp_data_.pre_grasp_posture_.header.stamp = ros::Time::now();
-    // Name of joints:
-    grasp_data_.pre_grasp_posture_.name.resize(1);
-    grasp_data_.pre_grasp_posture_.name[0] = EE_JOINT;
-    // Position of joints
-    grasp_data_.pre_grasp_posture_.position.resize(1);
-    grasp_data_.pre_grasp_posture_.position[0] = 1; // TODO clam_msgs::ClamGripperCommandGoal::GRIPPER_OPEN;
-
-    // -------------------------------
-    // Create grasp posture
-    grasp_data_.grasp_posture_.header.frame_id = BASE_LINK;
-    grasp_data_.grasp_posture_.header.stamp = ros::Time::now();
-    // Name of joints:
-    grasp_data_.grasp_posture_.name.resize(1);
-    grasp_data_.grasp_posture_.name[0] = EE_JOINT;
-    // Position of joints
-    grasp_data_.grasp_posture_.position.resize(1);
-    grasp_data_.grasp_posture_.position[0] = 0; // TODO clam_msgs::ClamGripperCommandGoal::GRIPPER_CLOSE;
-
-    // -------------------------------
-    // Links
-    grasp_data_.base_link_ = BASE_LINK;
-    grasp_data_.ee_parent_link_ = EE_PARENT_LINK;
-
-    // -------------------------------
-    // Nums
-    grasp_data_.approach_retreat_desired_dist_ = 0.05;
-    grasp_data_.approach_retreat_min_dist_ = 0.025;
-  }
-
-  void getTestBlock(geometry_msgs::Pose& block_pose)
+  void generateTestBlock(geometry_msgs::Pose& block_pose)
   {
     // Position
     geometry_msgs::Pose start_block_pose;
@@ -205,6 +160,8 @@ public:
 
     // Choose which block to test
     block_pose = start_block_pose;
+
+    rviz_tools_->publishBlock( block_pose, BLOCK_SIZE, true );
   }
 
   void generateRandomBlock(geometry_msgs::Pose& block_pose)
@@ -236,12 +193,12 @@ public:
 
 int main(int argc, char *argv[])
 {
-  int num_tests = 100;
+  int num_tests = 1;
 
   ros::init(argc, argv, "grasp_generator_test");
 
   // Allow the action server to recieve and send ros messages
-  ros::AsyncSpinner spinner(5);
+  ros::AsyncSpinner spinner(2);
   spinner.start();
 
   // Seed random

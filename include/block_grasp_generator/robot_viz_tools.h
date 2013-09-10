@@ -122,7 +122,7 @@ public:
     planning_group_name_(planning_group_name),
     base_link_(base_link),
     floor_to_base_height_(floor_to_base_height),
-    marker_lifetime_(ros::Duration(10.0)),
+    marker_lifetime_(ros::Duration(30.0)),
     nh_("~"),
     muted_(false)
   {
@@ -237,7 +237,6 @@ public:
       if(!loadPlanningSceneMonitor())
         return false;
 
-    return true; // temp
     // -----------------------------------------------------------------------------------------------
     // Get end effector group
 
@@ -273,8 +272,9 @@ public:
     robot_interaction.decideActiveEndEffectors(planning_group_name_);
 
     // Get active EE
-    std::vector<robot_interaction::RobotInteraction::EndEffector>
-      active_eef = robot_interaction.getActiveEndEffectors();
+    std::vector<robot_interaction::RobotInteraction::EndEffector> active_eef = 
+      robot_interaction.getActiveEndEffectors();
+      
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of active end effectors: " << active_eef.size());
     if( !active_eef.size() )
     {
@@ -282,7 +282,7 @@ public:
       return false;
     }
 
-    // Just choose the first end effector TODO: better logic?
+    // Just choose the first end effector \todo better logic?
     robot_interaction::RobotInteraction::EndEffector eef = active_eef[0];
 
     // -----------------------------------------------------------------------------------------------
@@ -299,8 +299,9 @@ public:
     }
     catch(...)
     {
-      ROS_ERROR_STREAM_NAMED("robot_viz","Didn't find link state for " << eef.parent_link);
+      ROS_ERROR_STREAM_NAMED("robot_viz","Didn't find link state for " << ee_parent_link_);
     }
+    ROS_ERROR_STREAM_NAMED("temp","eef parent link = "<< ee_parent_link_);
 
     // Offset from gasp_pose to end effector
     static const double X_OFFSET = 0; //-0.15;
@@ -338,7 +339,7 @@ public:
     if(muted_)
       return true;
 
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing end effector markers");
+    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing end effector markers");
 
     //ROS_INFO_STREAM("Mesh (" << grasp_pose.position.x << ","<< grasp_pose.position.y << ","<< grasp_pose.position.z << ")");
 
@@ -380,7 +381,7 @@ public:
       tf::poseTFToMsg(tf_root_to_mesh_new, marker_array_.markers[i].pose);
       // -----------------------------------------------------------------------------------------------
 
-      //ROS_INFO_STREAM("Marker " << i << ":\n" << marker_array_.markers[i]);
+      ROS_INFO_STREAM("Marker " << i << ":\n" << marker_array_.markers[i]);
 
       rviz_marker_pub_.publish( marker_array_.markers[i] );
       ros::Duration(0.05).sleep();  // Sleep to prevent markers from being 'skipped' in rviz
@@ -470,7 +471,7 @@ public:
     if(muted_)
       return true; // this function will only work if we have loaded the publishers
 
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing sphere");
+    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing sphere");
 
     visualization_msgs::Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
@@ -536,7 +537,7 @@ public:
     if(muted_)
       return true;
 
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing arrow");
+    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing arrow");
 
     //ROS_INFO_STREAM("Arrow (" << pose.position.x << ","<< pose.position.y << ","<< pose.position.z << ")");
 

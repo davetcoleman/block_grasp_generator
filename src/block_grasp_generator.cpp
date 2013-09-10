@@ -46,12 +46,12 @@ BlockGraspGenerator::BlockGraspGenerator(RobotVizToolsPtr rviz_tools) :
 // Deconstructor
 BlockGraspGenerator::~BlockGraspGenerator()
 {
-    ROS_DEBUG_STREAM_NAMED("block_grasp_generator","Descontructor for Block Grasp Generator");
+  ROS_DEBUG_STREAM_NAMED("block_grasp_generator","Descontructor for Block Grasp Generator");
 }
 
 // Create all possible grasp positions for a block
 bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data,
-                                         std::vector<manipulation_msgs::Grasp>& possible_grasps)
+  std::vector<manipulation_msgs::Grasp>& possible_grasps)
 {
   // ---------------------------------------------------------------------------------------------
   // Create a transform from the block's frame (center of block) to /base_link
@@ -60,9 +60,9 @@ bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, 
   // ---------------------------------------------------------------------------------------------
   // Calculate grasps in two axis in both directions
   generateAxisGrasps( possible_grasps, X_AXIS, DOWN, grasp_data);
-  generateAxisGrasps( possible_grasps, X_AXIS, UP, grasp_data);
-  generateAxisGrasps( possible_grasps, Y_AXIS, DOWN, grasp_data);
-  generateAxisGrasps( possible_grasps, Y_AXIS, UP, grasp_data);
+  //generateAxisGrasps( possible_grasps, X_AXIS, UP,   grasp_data);
+  //generateAxisGrasps( possible_grasps, Y_AXIS, DOWN, grasp_data);
+  //generateAxisGrasps( possible_grasps, Y_AXIS, UP,   grasp_data);
   ROS_INFO_STREAM_NAMED("grasp", "Generated " << possible_grasps.size() << " grasps." );
 
   // Visualize results
@@ -73,7 +73,7 @@ bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, 
 
 // Create grasp positions in one axis
 bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Grasp>& possible_grasps, grasp_axis_t axis,
-                                             grasp_direction_t direction, const RobotGraspData& grasp_data)
+  grasp_direction_t direction, const RobotGraspData& grasp_data)
 {
   // ---------------------------------------------------------------------------------------------
   // Grasp parameters
@@ -169,9 +169,10 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
     // Grasp ------------------------------------------------------------------------------------------------
 
-    // TESTING - TODO - remove this
+    // TESTING - TODO - remove this - really? maybe keep it
+
     // Change grasp to frame of reference of end effector
-    {    
+    {
       geometry_msgs::Pose grasp_pose_to_eef_pose_;
 
       // Orientation
@@ -194,7 +195,6 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
       // Transform the grasp pose
       // grasp_pose_msg.pose = grasp_pose_msg.pose * grasp_pose_to_eef_pose_;
       grasp_pose = grasp_pose * eef_conversion_pose;
-
     }
 
     // Convert pose to global frame (base_link)
@@ -202,7 +202,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
     // TEMP
     //rviz_tools_->publishArrow(grasp_pose_msg.pose);
-    
+
 
     // The position of the end-effector for the grasp relative to a reference frame (that is always specified elsewhere, not in this message)
     new_grasp.grasp_pose = grasp_pose_msg;
@@ -218,8 +218,8 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     // an optional list of obstacles that we have semantic information about and that can be touched/pushed/moved in the course of grasping
     new_grasp.allowed_touch_objects.push_back("Block1");
     /*new_grasp.allowed_touch_objects.push_back("Block2");
-    new_grasp.allowed_touch_objects.push_back("Block3");
-    new_grasp.allowed_touch_objects.push_back("Block4");*/
+      new_grasp.allowed_touch_objects.push_back("Block3");
+      new_grasp.allowed_touch_objects.push_back("Block4");*/
 
     // -------------------------------------------------------------------------------------------------------
     // Approach and retreat - add pose twice to possible grasps - two different approach and retreat motions
@@ -246,20 +246,21 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     // Add to vector
     possible_grasps.push_back(new_grasp);
 
+    /*
     // Angled with pose -------------------------------------------------------------------------------------
 
     // Approach
     gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_approach.direction.vector.x = 1;
     gripper_approach.direction.vector.y = 0;
-    gripper_approach.direction.vector.z = 0; 
+    gripper_approach.direction.vector.z = 0;
     new_grasp.approach = gripper_approach;
 
     // Retreat
     gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_retreat.direction.vector.x = -1;
     gripper_retreat.direction.vector.y = 0;
-    gripper_retreat.direction.vector.z = 0; 
+    gripper_retreat.direction.vector.z = 0;
     new_grasp.retreat = gripper_retreat;
 
     // Add to vector
@@ -271,14 +272,14 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_approach.direction.vector.x = -1;
     gripper_approach.direction.vector.y = 0;
-    gripper_approach.direction.vector.z = 0; 
+    gripper_approach.direction.vector.z = 0;
     new_grasp.approach = gripper_approach;
 
     // Retreat
     gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_retreat.direction.vector.x = 1;
     gripper_retreat.direction.vector.y = 0;
-    gripper_retreat.direction.vector.z = 0; 
+    gripper_retreat.direction.vector.z = 0;
     new_grasp.retreat = gripper_retreat;
 
     // Add to vector
@@ -290,14 +291,14 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_approach.direction.vector.x = 0;
     gripper_approach.direction.vector.y = 0;
-    gripper_approach.direction.vector.z = -1; 
+    gripper_approach.direction.vector.z = -1;
     new_grasp.approach = gripper_approach;
 
     // Retreat
     gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_retreat.direction.vector.x = 0;
     gripper_retreat.direction.vector.y = 0;
-    gripper_retreat.direction.vector.z = 1; 
+    gripper_retreat.direction.vector.z = 1;
     new_grasp.retreat = gripper_retreat;
 
     // Add to vector
@@ -309,14 +310,14 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_approach.direction.vector.x = 0;
     gripper_approach.direction.vector.y = -1;
-    gripper_approach.direction.vector.z = 0; 
+    gripper_approach.direction.vector.z = 0;
     new_grasp.approach = gripper_approach;
 
     // Retreat
     gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_retreat.direction.vector.x = 0;
     gripper_retreat.direction.vector.y = 1;
-    gripper_retreat.direction.vector.z = 0; 
+    gripper_retreat.direction.vector.z = 0;
     new_grasp.retreat = gripper_retreat;
 
     // Add to vector
@@ -328,18 +329,20 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_approach.direction.vector.x = 0;
     gripper_approach.direction.vector.y = 1;
-    gripper_approach.direction.vector.z = 0; 
+    gripper_approach.direction.vector.z = 0;
     new_grasp.approach = gripper_approach;
 
     // Retreat
     gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
     gripper_retreat.direction.vector.x = 0;
     gripper_retreat.direction.vector.y = -1;
-    gripper_retreat.direction.vector.z = 0; 
+    gripper_retreat.direction.vector.z = 0;
     new_grasp.retreat = gripper_retreat;
 
     // Add to vector
     possible_grasps.push_back(new_grasp);
+
+    */
   }
 
   return true;
@@ -352,7 +355,7 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
   if(rviz_tools_->isMuted())
   {
     ROS_DEBUG_STREAM_NAMED("grasp","Not visualizing grasps - muted.");
-    return; // this function will only work if we have loaded the publishers
+    return;
   }
 
   ROS_DEBUG_STREAM_NAMED("grasp","Visualizing " << possible_grasps.size() << " grasps");
@@ -365,13 +368,12 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
   {
     ++i;
 
-    if( i % 16) 
-      continue;
+    //    if( i % 16)
+    //      continue;
 
-    //ROS_DEBUG_STREAM_NAMED("grasp","Visualizing grasp pose");
+    ROS_DEBUG_STREAM_NAMED("grasp","Visualizing grasp pose " << i);
 
-    //rviz_tools_->publishSphere(grasp_it->grasp_pose.pose);
-
+    rviz_tools_->publishSphere(grasp_it->grasp_pose.pose);
     rviz_tools_->publishArrow(grasp_it->grasp_pose.pose);
     rviz_tools_->publishEEMarkers(grasp_it->grasp_pose.pose);
 
@@ -379,17 +381,17 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
 
     // Show robot joint positions if available
     /*
-    if( grasp_it->grasp_posture.position.size() > 1 )
-    {
+      if( grasp_it->grasp_posture.position.size() > 1 )
+      {
       ROS_WARN_STREAM_NAMED("temp","HAS IK SOLUTION - Positions:");
       std::copy(grasp_it->grasp_posture.position.begin(), grasp_it->grasp_posture.position.end(), std::ostream_iterator<double>(std::cout, "\n"));
       rviz_tools_->publishPlanningScene(grasp_it->grasp_posture.position);
       ros::Duration(5.0).sleep();
-    }
+      }
     */
 
-    ros::Duration(0.001).sleep();
-    //ros::Duration(0.25).sleep();
+    //ros::Duration(0.001).sleep();
+    ros::Duration(1.00).sleep();
   }
 }
 
