@@ -230,7 +230,6 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     // Straight down ---------------------------------------------------------------------------------------
     // With respect to the base link/world frame
 
-    /*
     // Approach
     gripper_approach.direction.header.frame_id = grasp_data.base_link_;
     gripper_approach.direction.vector.x = 0;
@@ -247,7 +246,6 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
     // Add to vector
     possible_grasps.push_back(new_grasp);
-    */
 
     // Angled with pose -------------------------------------------------------------------------------------
     // Approach with respect to end effector orientation
@@ -409,115 +407,69 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
 
 void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, const RobotGraspData& grasp_data)
 {
-  /*
-    Eigen::Affine3d grasp_pose;
-    // Convert grasp pose to Eigen affine
-    tf::poseMsgToEigen(grasp_pose_msg.pose, grasp_pose);
-    grasp_pose.translation() = Eigen::Vector3d( direction_scaled.x, direction_scaled.y, direction_scaled.z );
-  */
+  // Grasp Pose Variables
+  geometry_msgs::Pose grasp_pose = grasp.grasp_pose.pose;
+  Eigen::Affine3d grasp_pose_eigen;
+  tf::poseMsgToEigen(grasp_pose, grasp_pose_eigen);
 
-  ROS_DEBUG_STREAM_NAMED("temp","Original Grasp: \n" << grasp.grasp_pose.pose);
+  // Pre-grasp pose variables
+  geometry_msgs::Pose pre_grasp_pose;
+  Eigen::Affine3d pre_grasp_pose_eigen;
+
+  // Approach direction variables
+  Eigen::Vector3d approach_direction_local;
 
   // Display Grasp Score
   std::string text = "Grasp Quality: " + boost::lexical_cast<std::string>(int(grasp.grasp_quality*100)) + "%";
-  rviz_tools_->publishText(grasp.grasp_pose.pose, text);
+  rviz_tools_->publishText(grasp_pose, text);
 
-  // Temp
-  //  rviz_tools_->publishEEMarkers(grasp.grasp_pose.pose, GREEN, "ee2");
-  rviz_tools_->publishArrow(grasp.grasp_pose.pose, GREEN);
+  // Publish original grasp pose
+  rviz_tools_->publishArrow(grasp_pose, GREEN);
 
-  // Show pre-grasp position
-  geometry_msgs::Pose pre_grasp_pose;
-
-  /*
   // Convert the grasp pose into the frame of reference of the approach/retreat frame_id
-  if( grasp.approach.direction.header.frame_id == grasp_data.ee_parent_link_ )
-  {
-    ROS_ERROR_STREAM_NAMED("temp","testing pose ----------------");
 
-    Eigen::Affine3d eigen_grasp_pose;
-    tf::poseMsgToEigen(grasp.grasp_pose.pose, eigen_grasp_pose);
-
-    // convert approach direction to Eigen structures
-    //    Eigen::Vector3d approach_direction;
-    //    tf::vectorMsgToEigen(grasp.approach.direction.vector, approach_direction);
-
-    //    eigen_grasp_pose.translation() = approach_direction*0.01;
-    //    eigen_grasp_pose.translation() = eigen_grasp_pose.translation() + Eigen::Vector3d( 0, 0, 0.1 );
-    Eigen::Affine3d eigen_conversion = eigen_grasp_pose * Eigen::Translation3f( 0.1,0,0);
-    //    eigen_conversion.translation() = Eigen::Vector3d( 0.1, 0, 0 );
-    //    eigen_conversion *= block_global_transform_;
-
-    tf::poseEigenToMsg(eigen_conversion, pre_grasp_pose);
-    rviz_tools_->publishArrow(pre_grasp_pose, RED);
-
-    // Try 2
-    eigen_conversion = eigen_grasp_pose * Eigen::Translation3f( 0,0.1,0);
-    tf::poseEigenToMsg(eigen_conversion, pre_grasp_pose);
-    rviz_tools_->publishArrow(pre_grasp_pose, ORANGE);
-
-    // Convert back to regular pose
-    tf::poseEigenToMsg(eigen_grasp_pose*eigen_conversion, pre_grasp_pose);
-    rviz_tools_->publishArrow(pre_grasp_pose, BLUE);
-  }
-  //  ros::Duration(30).sleep();
-  exit(0);
-  return;
-  */
-
-  /*
-  // convert approach direction and retreat direction to Eigen structures
-  Eigen::Vector3d approach_direction;
-  tf::vectorMsgToEigen(grasp.approach.direction.vector, approach_direction);
-
-  ROS_WARN_STREAM_NAMED("temp","approach direction:\n" << approach_direction);
-
-  // if translation vectors are specified in the frame of the ik link name, then we assume the
-  // frame is local; otherwise, the frame is global
-  bool approach_direction_is_global_frame = !robot_state::Transforms::sameFrame(
-  grasp.approach.direction.header.frame_id, grasp_data.ee_parent_link_);
-
-  ROS_DEBUG_STREAM_NAMED("temp","approach_direction_is_global_frame = " << approach_direction_is_global_frame);
-
-  // transform the input vectors in accordance to frame specified in the header;
-  if (approach_direction_is_global_frame)
-  approach_direction = rviz_tools_->getPlanningSceneMonitor()->getPlanningScene()->
-  getFrameTransform(grasp.approach.direction.header.frame_id).rotation() * approach_direction;
-
-  ROS_WARN_STREAM_NAMED("temp","approach direction2:\n" << approach_direction);
-  */
-
-  ROS_INFO_STREAM_NAMED("temp","grasp pose: \n" << grasp.grasp_pose.pose);
-
-
-
-  // Animate the movement
+  // Animate the movement - for ee approach direction
   double animation_resulution = 0.1; // the higher the better the resolution
   for(double percent = 0; percent < 1; percent += animation_resulution)
   {
-    if( !ros::ok() )  // Check that ROS is still ok and that user isn't trying to quit
+    if( !ros::ok() ) // Check that ROS is still ok and that user isn't trying to quit
       break;
 
+    // Copy original grasp pose to pre-grasp pose
+    pre_grasp_pose_eigen = grasp_pose_eigen;
+
+    // The direction of the pre-grasp
     // Calculate the current animation position based on the percent
-    pre_grasp_pose = grasp.grasp_pose.pose;
-    pre_grasp_pose.position.x -= grasp.approach.direction.vector.x * grasp.approach.desired_distance * (1-percent);
-    pre_grasp_pose.position.y -= grasp.approach.direction.vector.y * grasp.approach.desired_distance * (1-percent);
-    pre_grasp_pose.position.z -= grasp.approach.direction.vector.z * grasp.approach.desired_distance * (1-percent);
+    Eigen::Vector3d approach_direction = Eigen::Vector3d(
+      -1 * grasp.approach.direction.vector.x * grasp.approach.desired_distance * (1-percent),
+      -1 * grasp.approach.direction.vector.y * grasp.approach.desired_distance * (1-percent),
+      -1 * grasp.approach.direction.vector.z * grasp.approach.desired_distance * (1-percent)
+    );
+
+    // Decide if we need to change the approach_direction to the local frame of the end effector orientation
+    if( grasp.approach.direction.header.frame_id == grasp_data.ee_parent_link_ )
+    {
+      // Apply/compute the approach_direction vector in the local frame of the grasp_pose orientation
+      approach_direction_local = grasp_pose_eigen.rotation() * approach_direction;
+    }
+    else
+    {
+      approach_direction_local = approach_direction; //grasp_pose_eigen.rotation() * approach_direction;
+    }
+
+    // Update the grasp matrix usign the new locally-framed approach_direction
+    pre_grasp_pose_eigen.translation() += approach_direction_local;
+
+    // Convert eigen pre-grasp position back to regular message
+    tf::poseEigenToMsg(pre_grasp_pose_eigen, pre_grasp_pose);
 
     //rviz_tools_->publishArrow(pre_grasp_pose, BLUE);
     rviz_tools_->publishEEMarkers(pre_grasp_pose);
 
     ros::Duration(0.001).sleep();
   }
+  ros::Duration(11).sleep();
 
-  /*
-  // Show grasp position
-  rviz_tools_->publishSphere(grasp.grasp_pose.pose);
-  rviz_tools_->publishArrow(grasp.grasp_pose.pose, BLUE);
-  rviz_tools_->publishEEMarkers(grasp.grasp_pose.pose);
-
-  ros::Duration(1.00).sleep();
-  */
 }
 
 

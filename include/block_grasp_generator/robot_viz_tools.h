@@ -141,10 +141,6 @@ public:
     if(!loadPlanningSceneMonitor())
       ROS_ERROR_STREAM_NAMED("robot_viz","Unable to load planning scene monitor");
 
-    // Load EE Markers
-    if( !loadEEMarker() )
-      ROS_ERROR_STREAM_NAMED("robot_viz","Unable to publish EE marker");
-
     // Rviz Visualizations
     rviz_marker_pub_ = nh_.advertise<visualization_msgs::Marker>(marker_topic_, 1);
     ROS_DEBUG_STREAM_NAMED("robot_viz","Visualizing rviz markers on topic " << marker_topic_);
@@ -158,6 +154,13 @@ public:
       (ATTACHED_COLLISION_TOPIC, 10);
     ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing attached collision objects on topic "
       << ATTACHED_COLLISION_TOPIC);
+
+    //loadRobotMarkers();
+    //ros::Duration(100).sleep();
+
+    // Load EE Markers
+    if( !loadEEMarker() )
+      ROS_ERROR_STREAM_NAMED("robot_viz","Unable to publish EE marker");
 
     loadRvizMarkers();
 
@@ -313,6 +316,72 @@ public:
    }
   */
 
+  bool loadRobotMarkers()
+  {
+    ROS_ERROR_STREAM_NAMED("temp","loading robot markers");
+
+    // Get robot model
+    robot_model::RobotModelConstPtr robot_model = planning_scene_monitor_->getRobotModel();
+
+    /*
+    // Get joint state group
+    //robot_state::JointStateGroup* joint_state_group = robot_state.getJointStateGroup(ee_group_name_);
+    const robot_model::JointModelGroup* joint_model_group = robot_model->getJointModelGroup(ee_group_name_);
+
+    if( joint_model_group == NULL ) // make sure EE_GROUP exists
+    {
+    ROS_ERROR_STREAM_NAMED("robot_viz","Unable to find joint model group " << ee_group_name_ );
+    return false;
+    }
+    */
+
+    // Get all link names
+    const std::vector<std::string> &link_names = robot_model->getLinkModelNames();;
+
+    ROS_DEBUG_STREAM_NAMED("robot_viz","Number of links in baxter: " << link_names.size());
+    std::copy(link_names.begin(), link_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+
+
+    // -----------------------------------------------------------------------------------------------
+    // Get EE link markers for Rviz
+    //    robot_state::RobotState robot_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
+    robot_state::RobotState robot_state(robot_model);
+
+    robot_state.updateLinkTransforms();
+    //robot_state.printStateInfo();
+    //robot_state.printTransforms();
+
+    visualization_msgs::MarkerArray robot_marker_array;
+    robot_state.getRobotMarkers(robot_marker_array, link_names, getColor( GREY ), "dave test", ros::Duration());
+
+    ROS_DEBUG_STREAM_NAMED("robot_viz","Number of rviz markers: " << robot_marker_array.markers.size());
+
+    // Publish the markers
+    for (std::size_t i = 0 ; i < robot_marker_array.markers.size() ; ++i)
+    {
+      // Make sure ROS is still spinning
+      if( !ros::ok() )
+        break;
+
+      // Header
+      robot_marker_array.markers[i].header.frame_id = base_link_;
+      robot_marker_array.markers[i].header.stamp = ros::Time::now();
+
+      // Options for meshes
+      if( robot_marker_array.markers[i].type == visualization_msgs::Marker::MESH_RESOURCE )
+        robot_marker_array.markers[i].mesh_use_embedded_materials = true;
+
+      rviz_marker_pub_.publish( robot_marker_array.markers[i] );
+      ros::Duration(0.1).sleep();  // Sleep to prevent markers from being 'skipped' in rviz
+    }
+
+    ROS_ERROR_STREAM_NAMED("temp","done with publishing whole robot");
+
+    exit(0);
+    return true;
+  }
+
+
   /**
    * \brief Call this once at begining to load the robot marker
    * \return true if it is successful
@@ -325,7 +394,7 @@ public:
     // Create color to use for EE markers
     std_msgs::ColorRGBA marker_color = getColor( GREY );
 
-    // Get robot state
+    // Get robot model
     robot_model::RobotModelConstPtr robot_model = planning_scene_monitor_->getRobotModel();
 
     // Get joint state group
@@ -342,9 +411,11 @@ public:
     const std::vector<std::string> &ee_link_names = joint_model_group->getLinkModelNames();
 
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of links in group " << ee_group_name_ << ": " << ee_link_names.size());
+    std::copy(ee_link_names.begin(), ee_link_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
 
     // Robot Interaction - finds the end effector associated with a planning group
-    robot_interaction::RobotInteraction robot_interaction( planning_scene_monitor_->getRobotModel() );
+    //robot_interaction::RobotInteraction robot_interaction( planning_scene_monitor_->getRobotModel() );
+    robot_interaction::RobotInteraction robot_interaction( robot_model );
 
     // Decide active end effectors
     robot_interaction.decideActiveEndEffectors(planning_group_name_);
@@ -366,6 +437,10 @@ public:
     // -----------------------------------------------------------------------------------------------
     // Get EE link markers for Rviz
     robot_state::RobotState robot_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
+    //    robot_state.updateTransforms();
+    ROS_ERROR_STREAM_NAMED("temp","before printing");
+    robot_state.printStateInfo();
+    robot_state.printTransforms();
     robot_state.getRobotMarkers(ee_marker_array_, ee_link_names, marker_color, eef.eef_group, ros::Duration());
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of rviz markers in end effector: " << ee_marker_array_.markers.size());
 
@@ -380,24 +455,6 @@ public:
     {
       ROS_ERROR_STREAM_NAMED("robot_viz","Didn't find link state for " << ee_parent_link_);
     }
-    ROS_ERROR_STREAM_NAMED("temp","eef parent link = "<< ee_parent_link_);
-
-    /*
-    // Offset from gasp_pose to end effector
-    static const double X_OFFSET = 0; //-0.15;
-    // Allow a transform from our pose to the end effector position
-    // TODO: make this more generic for arbitrary grippers
-    // Orientation
-    double angle = 0; //M_PI / 2;  // turn on Z axis
-    Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(angle), Eigen::Vector3d::UnitY()));
-    grasp_pose_to_eef_pose_.position.x = X_OFFSET;
-    grasp_pose_to_eef_pose_.position.y = 0;
-    grasp_pose_to_eef_pose_.position.z = 0;
-    grasp_pose_to_eef_pose_.orientation.x = quat.x();
-    grasp_pose_to_eef_pose_.orientation.y = quat.y();
-    grasp_pose_to_eef_pose_.orientation.z = quat.z();
-    grasp_pose_to_eef_pose_.orientation.w = quat.w();
-    */
 
     // Copy original marker poses to a vector
     for (std::size_t i = 0 ; i < ee_marker_array_.markers.size() ; ++i)
@@ -412,7 +469,7 @@ public:
    * \brief Publish an end effector to rviz
    * \return true if it is successful
    */
-  bool publishEEMarkers(const geometry_msgs::Pose &grasp_pose, const rviz_colors &color = WHITE, 
+  bool publishEEMarkers(const geometry_msgs::Pose &grasp_pose, const rviz_colors &color = WHITE,
     const std::string &ns="end_effector")
   {
     if(muted_)
@@ -558,7 +615,7 @@ public:
 
     // Update the single point with new pose
     sphere_marker_.points[0] = pose.position;
-    
+
     // Publish
     rviz_marker_pub_.publish( sphere_marker_ );
 
@@ -859,12 +916,12 @@ public:
     case RED:
       result.r = 0.8;
       result.g = 0.1;
-      result.b = 0.1;      
+      result.b = 0.1;
       break;
     case GREEN:
       result.r = 0.1;
       result.g = 0.8;
-      result.b = 0.1;      
+      result.b = 0.1;
       break;
     case GREY:
       result.r = 0.9;
