@@ -59,14 +59,14 @@ bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, 
 
   // ---------------------------------------------------------------------------------------------
   // Calculate grasps in two axis in both directions
-  //generateAxisGrasps( possible_grasps, X_AXIS, DOWN, grasp_data);
-  //generateAxisGrasps( possible_grasps, X_AXIS, UP,   grasp_data);
+  generateAxisGrasps( possible_grasps, X_AXIS, DOWN, grasp_data);
+  generateAxisGrasps( possible_grasps, X_AXIS, UP,   grasp_data);
   generateAxisGrasps( possible_grasps, Y_AXIS, DOWN, grasp_data);
-  //generateAxisGrasps( possible_grasps, Y_AXIS, UP,   grasp_data);
+  generateAxisGrasps( possible_grasps, Y_AXIS, UP,   grasp_data);
   ROS_INFO_STREAM_NAMED("grasp", "Generated " << possible_grasps.size() << " grasps." );
 
   // Visualize results
-  visualizeGrasps(possible_grasps, block_pose, grasp_data);
+  //visualizeGrasps(possible_grasps, block_pose, grasp_data);
 
   return true;
 }
@@ -267,84 +267,6 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     // Add to vector
     possible_grasps.push_back(new_grasp);
 
-    /*
-    // Guessing -------------------------------------------------------------------------------------
-
-    // Approach
-    gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_approach.direction.vector.x = -1;
-    gripper_approach.direction.vector.y = 0;
-    gripper_approach.direction.vector.z = 0;
-    new_grasp.approach = gripper_approach;
-
-    // Retreat
-    gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_retreat.direction.vector.x = 1;
-    gripper_retreat.direction.vector.y = 0;
-    gripper_retreat.direction.vector.z = 0;
-    new_grasp.retreat = gripper_retreat;
-
-    // Add to vector
-    possible_grasps.push_back(new_grasp);
-
-    // Guessing -------------------------------------------------------------------------------------
-
-    // Approach
-    gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_approach.direction.vector.x = 0;
-    gripper_approach.direction.vector.y = 0;
-    gripper_approach.direction.vector.z = -1;
-    new_grasp.approach = gripper_approach;
-
-    // Retreat
-    gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_retreat.direction.vector.x = 0;
-    gripper_retreat.direction.vector.y = 0;
-    gripper_retreat.direction.vector.z = 1;
-    new_grasp.retreat = gripper_retreat;
-
-    // Add to vector
-    possible_grasps.push_back(new_grasp);
-
-    // Guessing -------------------------------------------------------------------------------------
-
-    // Approach
-    gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_approach.direction.vector.x = 0;
-    gripper_approach.direction.vector.y = -1;
-    gripper_approach.direction.vector.z = 0;
-    new_grasp.approach = gripper_approach;
-
-    // Retreat
-    gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_retreat.direction.vector.x = 0;
-    gripper_retreat.direction.vector.y = 1;
-    gripper_retreat.direction.vector.z = 0;
-    new_grasp.retreat = gripper_retreat;
-
-    // Add to vector
-    possible_grasps.push_back(new_grasp);
-
-    // Guessing -------------------------------------------------------------------------------------
-
-    // Approach
-    gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_approach.direction.vector.x = 0;
-    gripper_approach.direction.vector.y = 1;
-    gripper_approach.direction.vector.z = 0;
-    new_grasp.approach = gripper_approach;
-
-    // Retreat
-    gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_retreat.direction.vector.x = 0;
-    gripper_retreat.direction.vector.y = -1;
-    gripper_retreat.direction.vector.z = 0;
-    new_grasp.retreat = gripper_retreat;
-
-    // Add to vector
-    possible_grasps.push_back(new_grasp);
-
-    */
   }
 
   return true;
@@ -387,7 +309,6 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
       rviz_tools_->publishArrow(grasp_it->grasp_pose.pose, BLUE);
       rviz_tools_->publishEEMarkers(grasp_it->grasp_pose.pose);
     }
-    //ROS_INFO_STREAM_NAMED("","Grasp: \n" << grasp_it->grasp_pose.pose);
 
     // Show robot joint positions if available
     /*
@@ -401,7 +322,6 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
     */
 
     ros::Duration(0.001).sleep();
-    //ros::Duration(1.00).sleep();
   }
 }
 
@@ -466,9 +386,8 @@ void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, co
     //rviz_tools_->publishArrow(pre_grasp_pose, BLUE);
     rviz_tools_->publishEEMarkers(pre_grasp_pose);
 
-    ros::Duration(0.001).sleep();
+    ros::Duration(0.005).sleep();
   }
-  ros::Duration(11).sleep();
 
 }
 

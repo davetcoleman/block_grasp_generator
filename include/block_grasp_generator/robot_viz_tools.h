@@ -339,8 +339,7 @@ public:
     const std::vector<std::string> &link_names = robot_model->getLinkModelNames();;
 
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of links in baxter: " << link_names.size());
-    std::copy(link_names.begin(), link_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
-
+    //    std::copy(link_names.begin(), link_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
 
     // -----------------------------------------------------------------------------------------------
     // Get EE link markers for Rviz
@@ -372,12 +371,9 @@ public:
         robot_marker_array.markers[i].mesh_use_embedded_materials = true;
 
       rviz_marker_pub_.publish( robot_marker_array.markers[i] );
-      ros::Duration(0.1).sleep();  // Sleep to prevent markers from being 'skipped' in rviz
+      ros::Duration(0.05).sleep();  // Sleep to prevent markers from being 'skipped' in rviz
     }
 
-    ROS_ERROR_STREAM_NAMED("temp","done with publishing whole robot");
-
-    exit(0);
     return true;
   }
 
@@ -411,7 +407,7 @@ public:
     const std::vector<std::string> &ee_link_names = joint_model_group->getLinkModelNames();
 
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of links in group " << ee_group_name_ << ": " << ee_link_names.size());
-    std::copy(ee_link_names.begin(), ee_link_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+    //std::copy(ee_link_names.begin(), ee_link_names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
 
     // Robot Interaction - finds the end effector associated with a planning group
     //robot_interaction::RobotInteraction robot_interaction( planning_scene_monitor_->getRobotModel() );
@@ -438,9 +434,12 @@ public:
     // Get EE link markers for Rviz
     robot_state::RobotState robot_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
     //    robot_state.updateTransforms();
-    ROS_ERROR_STREAM_NAMED("temp","before printing");
+    
+    /*ROS_ERROR_STREAM_NAMED("temp","before printing");
     robot_state.printStateInfo();
     robot_state.printTransforms();
+    */
+
     robot_state.getRobotMarkers(ee_marker_array_, ee_link_names, marker_color, eef.eef_group, ros::Duration());
     ROS_DEBUG_STREAM_NAMED("robot_viz","Number of rviz markers in end effector: " << ee_marker_array_.markers.size());
 
