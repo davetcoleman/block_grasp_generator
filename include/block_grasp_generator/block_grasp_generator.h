@@ -124,7 +124,7 @@ public:
    * \brief Animate the pre grasp, grasp, and post-grasp process - for testing and visualization
    * \param grasp - a fully completed manipulation message that descibes a grasp
    */
-  void animateGrasp(const manipulation_msgs::Grasp &grasp);
+  void animateGrasp(const manipulation_msgs::Grasp &grasp, const RobotGraspData& grasp_data);
 
   static void printBlockGraspData(const RobotGraspData& data)
   {

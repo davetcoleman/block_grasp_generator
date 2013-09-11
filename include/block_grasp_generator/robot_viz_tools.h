@@ -64,7 +64,7 @@ static const std::string ROBOT_DESCRIPTION="robot_description";
 static const std::string COLLISION_TOPIC = "/collision_object";
 static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object";
 
-enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE };
+enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE, ORANGE };
 
 class RobotVizTools
 {
@@ -137,6 +137,10 @@ public:
     muted_(false)
   {
 
+    // Load Planning Scene
+    if(!loadPlanningSceneMonitor())
+      ROS_ERROR_STREAM_NAMED("robot_viz","Unable to load planning scene monitor");
+
     // Load EE Markers
     if( !loadEEMarker() )
       ROS_ERROR_STREAM_NAMED("robot_viz","Unable to publish EE marker");
@@ -168,6 +172,10 @@ public:
   ~RobotVizTools()
   {
   }
+
+
+
+
 
   /**
    * \brief Pre-load rviz markers for better efficiency
@@ -287,11 +295,6 @@ public:
    if(muted_)
    return true; // this function will only work if we have loaded the publishers
 
-   // Load planning scene monitor if one was not already passed in
-   if(!planning_scene_monitor_)
-   if(!loadPlanningSceneMonitor())
-   return false;
-
    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing planning scene");
 
    // Output debug
@@ -316,11 +319,6 @@ public:
    */
   bool loadEEMarker()
   {
-    // Load planning scene monitor if one was not already passed in
-    if(!planning_scene_monitor_)
-      if(!loadPlanningSceneMonitor())
-        return false;
-
     // -----------------------------------------------------------------------------------------------
     // Get end effector group
 
@@ -414,7 +412,8 @@ public:
    * \brief Publish an end effector to rviz
    * \return true if it is successful
    */
-  bool publishEEMarkers(const geometry_msgs::Pose &grasp_pose)
+  bool publishEEMarkers(const geometry_msgs::Pose &grasp_pose, const rviz_colors &color = WHITE, 
+    const std::string &ns="end_effector")
   {
     if(muted_)
       return true;
@@ -433,8 +432,14 @@ public:
       ee_marker_array_.markers[i].header.frame_id = base_link_;
       ee_marker_array_.markers[i].header.stamp = ros::Time::now();
 
-      // Options
+      // Namespace
+      ee_marker_array_.markers[i].ns = ns;
+
+      // Lifetime
       ee_marker_array_.markers[i].lifetime = marker_lifetime_;
+
+      // Color
+      ee_marker_array_.markers[i].color = getColor( color );
 
       // Options for meshes
       if( ee_marker_array_.markers[i].type == visualization_msgs::Marker::MESH_RESOURCE )
@@ -482,8 +487,6 @@ public:
     if(muted_)
       return true; // this function will only work if we have loaded the publishers
 
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing mesh");
-
     visualization_msgs::Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
     marker.header.frame_id = base_link_;
@@ -524,7 +527,6 @@ public:
     point_a.x = x;
     point_a.y = y;
     point_a.z = z;
-    //ROS_INFO_STREAM("Publishing marker \n" << point_a );
 
     // Add the point pair to the line message
     marker.points.push_back( point_a );
@@ -597,8 +599,6 @@ public:
     if(muted_)
       return true;
 
-    //ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing block");
-
     // Set the timestamp
     block_marker_.header.stamp = ros::Time::now();
 
@@ -637,8 +637,6 @@ public:
   {
     if(muted_)
       return true;
-
-    ROS_DEBUG_STREAM_NAMED("robot_viz","Publishing text");
 
     text_marker_.id = 0;
 
@@ -686,11 +684,6 @@ public:
    */
   planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor()
   {
-    // Load planning scene monitor if one was not already passed in
-    if(!planning_scene_monitor_)
-      if(!loadPlanningSceneMonitor())
-        ROS_ERROR_STREAM_NAMED("","Unable to get planning scene");
-
     return planning_scene_monitor_;
   }
 
@@ -882,6 +875,11 @@ public:
       result.r = 1.0;
       result.g = 1.0;
       result.b = 1.0;
+      break;
+    case ORANGE:
+      result.r = 1.0;
+      result.g = 0.5;
+      result.b = 0.0;
       break;
     case BLUE:
     default:
