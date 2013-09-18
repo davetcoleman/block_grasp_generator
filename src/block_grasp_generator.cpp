@@ -46,7 +46,6 @@ BlockGraspGenerator::BlockGraspGenerator(RobotVizToolsPtr rviz_tools) :
 // Deconstructor
 BlockGraspGenerator::~BlockGraspGenerator()
 {
-  ROS_DEBUG_STREAM_NAMED("block_grasp_generator","Descontructor for Block Grasp Generator");
 }
 
 // Create all possible grasp positions for a block
@@ -97,7 +96,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
   grasp_pose_msg.header.frame_id = grasp_data.base_link_;
 
   // ---------------------------------------------------------------------------------------------
-  // Variables needed for calculations
+  // Angle calculations
   double radius = grasp_data.grasp_depth_; //0.12
   double xb;
   double yb = 0.0; // stay in the y plane of the block
@@ -188,16 +187,6 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
       tf::poseEigenToMsg(block_global_transform_ * grasp_pose, grasp_pose_msg.pose);
       rviz_tools_->publishArrow(grasp_pose_msg.pose, GREEN);
     }
-
-    // Test 2
-    /*
-      {
-      geometry_msgs::Pose grasp_pose_temp;
-      tf::poseEigenToMsg(block_global_transform_, grasp_pose_temp);
-      //ROS_ERROR_STREAM_NAMED("temp","block pose " << grasp_pose_temp);
-      rviz_tools_->publishArrow(grasp_pose_temp, RED);
-      }
-    */
 
     // ------------------------------------------------------------------------
     // Change grasp to frame of reference of this custom end effector

@@ -27,10 +27,10 @@ add_library(${PROJECT_NAME}_block_grasp_generator
 target_link_libraries(${PROJECT_NAME}_block_grasp_generator ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 # Grasp Filter Library
-#add_library(${PROJECT_NAME}_grasp_filter
-#  src/grasp_filter.cpp
-#)
-#target_link_libraries(${PROJECT_NAME}_grasp_filter ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_library(${PROJECT_NAME}_grasp_filter
+  src/grasp_filter.cpp
+)
+target_link_libraries(${PROJECT_NAME}_grasp_filter ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 # Catkin
 catkin_package(
@@ -65,8 +65,8 @@ include_directories(
 link_directories(${catkin_LIBRARY_DIRS})
 
 # Test executable
-#add_executable(grasp_filter_test src/grasp_filter_test.cpp)
-#target_link_libraries(grasp_filter_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator ${PROJECT_NAME}_grasp_filter)
+add_executable(grasp_filter_test src/grasp_filter_test.cpp)
+target_link_libraries(grasp_filter_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator ${PROJECT_NAME}_grasp_filter)
 
 # Test executable
 add_executable(robot_viz_tool_test src/robot_viz_tool_test.cpp)

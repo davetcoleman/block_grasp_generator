@@ -468,13 +468,13 @@ public:
    * \brief Publish an end effector to rviz
    * \return true if it is successful
    */
-  bool publishEEMarkers(const geometry_msgs::Pose &grasp_pose, const rviz_colors &color = WHITE,
+  bool publishEEMarkers(const geometry_msgs::Pose &pose, const rviz_colors &color = WHITE,
     const std::string &ns="end_effector")
   {
     if(muted_)
       return true;
 
-    //ROS_INFO_STREAM("Mesh (" << grasp_pose.position.x << ","<< grasp_pose.position.y << ","<< grasp_pose.position.z << ")");
+    //ROS_INFO_STREAM("Mesh (" << pose.position.x << ","<< pose.position.y << ","<< pose.position.z << ")");
 
     // -----------------------------------------------------------------------------------------------
     // Process each link of the end effector
@@ -505,7 +505,7 @@ public:
 
       // -----------------------------------------------------------------------------------------------
       // Do some math for the offset
-      // grasp_pose             - our generated grasp
+      // pose             - our generated grasp
       // markers[i].pose        - an ee link's pose relative to the whole end effector
       // REMOVED grasp_pose_to_eef_pose_ - the offset from the grasp pose to eef_pose - probably nothing
       tf::Pose tf_root_to_marker;
@@ -513,7 +513,7 @@ public:
       tf::Pose tf_pose_to_eef;
 
       // Simple conversion from geometry_msgs::Pose to tf::Pose
-      tf::poseMsgToTF(grasp_pose, tf_root_to_marker);
+      tf::poseMsgToTF(pose, tf_root_to_marker);
       tf::poseMsgToTF(marker_poses_[i], tf_root_to_mesh);
       // tf::poseMsgToTF(grasp_pose_to_eef_pose_, tf_pose_to_eef); // \todo REMOVE
 
@@ -537,8 +537,9 @@ public:
   /**
    * \brief Publish an marker of a mesh to rviz
    * \return true if it is successful
-   */
-  bool publishMesh(double x, double y, double z, double qx, double qy, double qz, double qw )
+   *
+  bool publishMesh(const geometry_msgs::Pose &pose, const rviz_colors &color = WHITE,
+    const std::string &ns="mesh")
   {
     if(muted_)
       return true; // this function will only work if we have loaded the publishers
@@ -594,6 +595,7 @@ public:
 
     return true;
   }
+  */
 
   /**
    * \brief Publish an marker of a sphere to rviz
@@ -947,6 +949,14 @@ public:
     return result;
   }
 
+  /**
+   * \brief Get the end effector parent link as loaded from the SRDF
+   * \return string of name of end effector parent link
+   */
+  const std::string& getEEParentLink()
+  {
+    return ee_parent_link_;
+  }
 
 }; // class
 
