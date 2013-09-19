@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   ROS_INFO_STREAM_NAMED("temp","Loading robot viz tools");
   block_grasp_generator::RobotVizToolsPtr rviz_tools_;
   rviz_tools_.reset(new block_grasp_generator::RobotVizTools( RVIZ_MARKER_TOPIC, EE_GROUP,
-      PLANNING_GROUP_NAME, BASE_LINK, 0));
+      PLANNING_GROUP_NAME, BASE_LINK));
 
   //  ros::Duration(1.0).sleep(); // let rviz markers finish publishing
 

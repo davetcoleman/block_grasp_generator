@@ -45,11 +45,16 @@
 // MoveIt
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_interaction/robot_interaction.h>
-#include <moveit_msgs/CollisionObject.h>
 #include <shape_tools/solid_primitive_dims.h>
+
+// MoveIt Messages
+#include <moveit_msgs/DisplayTrajectory.h>
+#include <moveit_msgs/CollisionObject.h>
 
 // ROS
 #include <tf_conversions/tf_eigen.h>
+#include <eigen_conversions/eigen_msg.h>
+#include <geometry_msgs/PoseArray.h>
 
 // Boost
 #include <boost/shared_ptr.hpp>
@@ -96,7 +101,7 @@ private:
   // End Effector Markers
   visualization_msgs::MarkerArray ee_marker_array_;
   tf::Pose tf_root_to_link_;
-  //  geometry_msgs::Pose grasp_pose_to_eef_pose_;
+  geometry_msgs::Pose grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
   std::vector<geometry_msgs::Pose> marker_poses_;
 
   // Whether to actually publish to rviz or not
@@ -114,30 +119,29 @@ public:
    * \brief Constructor with planning scene
    */
   RobotVizTools(std::string marker_topic, std::string ee_group_name, std::string planning_group_name,
-    std::string base_link, double floor_to_base_height,
-    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor) :
-    planning_scene_monitor_(planning_scene_monitor)
+    std::string base_link, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor)
+    : planning_scene_monitor_(planning_scene_monitor)
   {
     // Pass to next contructor
-    RobotVizTools(marker_topic, ee_group_name, planning_group_name, base_link, floor_to_base_height);
+    RobotVizTools(marker_topic, ee_group_name, planning_group_name, base_link);
   }
 
   /**
    * \brief Constructor w/o planning scene passed in
    */
   RobotVizTools(std::string marker_topic, std::string ee_group_name, std::string planning_group_name,
-    std::string base_link, double floor_to_base_height) :
-    marker_topic_(marker_topic),
-    ee_group_name_(ee_group_name),
-    planning_group_name_(planning_group_name),
-    base_link_(base_link),
-    floor_to_base_height_(floor_to_base_height),
-    marker_lifetime_(ros::Duration(30.0)),
-    nh_("~"),
-    muted_(false)
+    std::string base_link)
+    : marker_topic_(marker_topic),
+      ee_group_name_(ee_group_name),
+      planning_group_name_(planning_group_name),
+      base_link_(base_link),
+      floor_to_base_height_(0),
+      marker_lifetime_(ros::Duration(30.0)),
+      nh_("~"),
+      muted_(false)
   {
 
-    // Load Planning Scene
+    // Create planning scene monitor
     if(!loadPlanningSceneMonitor())
       ROS_ERROR_STREAM_NAMED("robot_viz","Unable to load planning scene monitor");
 
@@ -176,9 +180,23 @@ public:
   {
   }
 
+  /**
+   * \brief Allows an offset between base link and floor where objects are built. Default is zero
+   * \param floor_to_base_height - the offset
+   */
+  void setFloorToBaseHeight(double floor_to_base_height)
+  {
+    floor_to_base_height_ = floor_to_base_height;
+  }
 
-
-
+  /**
+   * \brief Convert generic grasp pose to this end effector's frame of reference  
+   * \param pose - the transform
+   */
+  void setGraspPoseToEEFPose(geometry_msgs::Pose grasp_pose_to_eef_pose)
+  {
+    grasp_pose_to_eef_pose_ = grasp_pose_to_eef_pose;
+  }
 
   /**
    * \brief Pre-load rviz markers for better efficiency
@@ -263,7 +281,7 @@ public:
     planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(ROBOT_DESCRIPTION));
 
     ros::spinOnce();
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.5).sleep();
     ros::spinOnce();
 
     if (planning_scene_monitor_->getPlanningScene())
@@ -281,7 +299,7 @@ public:
     }
 
     ros::spinOnce();
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.5).sleep();
     ros::spinOnce();
 
     return true;
@@ -434,10 +452,10 @@ public:
     // Get EE link markers for Rviz
     robot_state::RobotState robot_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
     //    robot_state.updateTransforms();
-    
+
     /*ROS_ERROR_STREAM_NAMED("temp","before printing");
-    robot_state.printStateInfo();
-    robot_state.printTransforms();
+      robot_state.printStateInfo();
+      robot_state.printTransforms();
     */
 
     robot_state.getRobotMarkers(ee_marker_array_, ee_link_names, marker_color, eef.eef_group, ros::Duration());
@@ -474,7 +492,21 @@ public:
     if(muted_)
       return true;
 
-    //ROS_INFO_STREAM("Mesh (" << pose.position.x << ","<< pose.position.y << ","<< pose.position.z << ")");
+    // -----------------------------------------------------------------------------------------------
+    // Change the end effector pose to frame of reference of this custom end effector
+
+    // Convert to Eigen
+    Eigen::Affine3d ee_pose_eigen;
+    Eigen::Affine3d eef_conversion_pose;
+    tf::poseMsgToEigen(pose, ee_pose_eigen);
+    tf::poseMsgToEigen(grasp_pose_to_eef_pose_, eef_conversion_pose);
+
+    // Transform the grasp pose
+    ee_pose_eigen = ee_pose_eigen * eef_conversion_pose;
+
+    // Convert back to message
+    geometry_msgs::Pose ee_pose;     // Non const version
+    tf::poseEigenToMsg(ee_pose_eigen, ee_pose);
 
     // -----------------------------------------------------------------------------------------------
     // Process each link of the end effector
@@ -538,63 +570,63 @@ public:
    * \brief Publish an marker of a mesh to rviz
    * \return true if it is successful
    *
-  bool publishMesh(const geometry_msgs::Pose &pose, const rviz_colors &color = WHITE,
-    const std::string &ns="mesh")
-  {
-    if(muted_)
-      return true; // this function will only work if we have loaded the publishers
+   bool publishMesh(const geometry_msgs::Pose &pose, const rviz_colors &color = WHITE,
+   const std::string &ns="mesh")
+   {
+   if(muted_)
+   return true; // this function will only work if we have loaded the publishers
 
-    visualization_msgs::Marker marker;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-    marker.header.frame_id = base_link_;
-    marker.header.stamp = ros::Time::now();
+   visualization_msgs::Marker marker;
+   // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+   marker.header.frame_id = base_link_;
+   marker.header.stamp = ros::Time::now();
 
-    // Set the namespace and id for this marker.  This serves to create a unique ID
-    marker.ns = "Mesh";
+   // Set the namespace and id for this marker.  This serves to create a unique ID
+   marker.ns = "Mesh";
 
-    // Set the marker type.
-    marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-    marker.mesh_resource = "package://clam_description/stl/gripper_base_link.STL";
-    ROS_ERROR_STREAM_NAMED("temp","TODO - add mesh resource");
+   // Set the marker type.
+   marker.type = visualization_msgs::Marker::MESH_RESOURCE;
+   marker.mesh_resource = "package://clam_description/stl/gripper_base_link.STL";
+   ROS_ERROR_STREAM_NAMED("temp","TODO - add mesh resource");
 
-    // Set the marker action.  Options are ADD and DELETE
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.id = 0;
+   // Set the marker action.  Options are ADD and DELETE
+   marker.action = visualization_msgs::Marker::ADD;
+   marker.id = 0;
 
-    marker.pose.position.x = x;
-    marker.pose.position.y = y;
-    marker.pose.position.z = z;
+   marker.pose.position.x = x;
+   marker.pose.position.y = y;
+   marker.pose.position.z = z;
 
-    marker.pose.orientation.x = qx;
-    marker.pose.orientation.y = qy;
-    marker.pose.orientation.z = qz;
-    marker.pose.orientation.w = qw;
+   marker.pose.orientation.x = qx;
+   marker.pose.orientation.y = qy;
+   marker.pose.orientation.z = qz;
+   marker.pose.orientation.w = qw;
 
-    marker.scale.x = 0.001;
-    marker.scale.y = 0.001;
-    marker.scale.z = 0.001;
+   marker.scale.x = 0.001;
+   marker.scale.y = 0.001;
+   marker.scale.z = 0.001;
 
-    marker.color = getColor( RED );
+   marker.color = getColor( RED );
 
-    // Make line color
-    std_msgs::ColorRGBA color = getColor( RED );
+   // Make line color
+   std_msgs::ColorRGBA color = getColor( RED );
 
-    // Point
-    geometry_msgs::Point point_a;
-    point_a.x = x;
-    point_a.y = y;
-    point_a.z = z;
+   // Point
+   geometry_msgs::Point point_a;
+   point_a.x = x;
+   point_a.y = y;
+   point_a.z = z;
 
-    // Add the point pair to the line message
-    marker.points.push_back( point_a );
-    marker.colors.push_back( color );
+   // Add the point pair to the line message
+   marker.points.push_back( point_a );
+   marker.colors.push_back( color );
 
-    marker.lifetime = marker_lifetime_;
+   marker.lifetime = marker_lifetime_;
 
-    rviz_marker_pub_.publish( marker );
+   rviz_marker_pub_.publish( marker );
 
-    return true;
-  }
+   return true;
+   }
   */
 
   /**
@@ -903,6 +935,46 @@ public:
     pub_collision_obj_.publish(collision_obj);
   }
 
+
+  /**
+   * \brief Animate trajectory in rviz
+   * \param trajectory_msg the actual plan
+   * \param start_state where the robot begins
+   * \return true if no errors
+   */
+  bool publishTrajectoryPath(const moveit_msgs::RobotTrajectory& trajectory_msg)
+    //    const moveit_msgs::RobotState& start_state)
+  {
+    // Create publisher
+    ros::Publisher display_path_publisher_;
+    display_path_publisher_ = nh_.advertise<moveit_msgs::DisplayTrajectory>
+      ("/move_group/display_planned_path", 10, true);
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+
+    // Create the message
+    moveit_msgs::DisplayTrajectory rviz_display;
+    rviz_display.model_id = planning_scene_monitor_->getPlanningScene()->getRobotModel()->getName();
+
+    //    rviz_display.trajectory_start = start_state;
+    rviz_display.trajectory.resize(1);
+    rviz_display.trajectory[0] = trajectory_msg;
+
+    // Publish message
+    display_path_publisher_.publish(rviz_display);
+    ROS_INFO_STREAM_NAMED("verticle_test","Sent display trajectory message");
+
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+
+    // Wait the duration of the trajectory
+    ros::Duration wait_sec = trajectory_msg.joint_trajectory.points.back().time_from_start * 5;
+    ROS_DEBUG_STREAM_NAMED("temp","sleeping " << wait_sec.toSec() );
+    wait_sec.sleep();
+
+    return true;
+  }
+
   /**
    * \brief Get the RGB value of standard colors
    * \param color - a enum pre-defined name of a color
@@ -914,36 +986,36 @@ public:
     result.a = 0.8;
     switch(color)
     {
-    case RED:
-      result.r = 0.8;
-      result.g = 0.1;
-      result.b = 0.1;
-      break;
-    case GREEN:
-      result.r = 0.1;
-      result.g = 0.8;
-      result.b = 0.1;
-      break;
-    case GREY:
-      result.r = 0.9;
-      result.g = 0.9;
-      result.b = 0.9;
-      break;
-    case WHITE:
-      result.r = 1.0;
-      result.g = 1.0;
-      result.b = 1.0;
-      break;
-    case ORANGE:
-      result.r = 1.0;
-      result.g = 0.5;
-      result.b = 0.0;
-      break;
-    case BLUE:
-    default:
-      result.r = 0.1;
-      result.g = 0.1;
-      result.b = 0.8;
+      case RED:
+        result.r = 0.8;
+        result.g = 0.1;
+        result.b = 0.1;
+        break;
+      case GREEN:
+        result.r = 0.1;
+        result.g = 0.8;
+        result.b = 0.1;
+        break;
+      case GREY:
+        result.r = 0.9;
+        result.g = 0.9;
+        result.b = 0.9;
+        break;
+      case WHITE:
+        result.r = 1.0;
+        result.g = 1.0;
+        result.b = 1.0;
+        break;
+      case ORANGE:
+        result.r = 1.0;
+        result.g = 0.5;
+        result.b = 0.0;
+        break;
+      case BLUE:
+      default:
+        result.r = 0.1;
+        result.g = 0.1;
+        result.b = 0.8;
     }
 
     return result;
