@@ -46,9 +46,7 @@
 //static const std::string EE_LINK = "gripper_roll_link";
 static const std::string EE_PARENT_LINK = "right_wrist";
 static const std::string PLANNING_GROUP_NAME = "right_arm";
-static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 static const std::string EE_GROUP = "right_hand";
-static const std::string EE_JOINT = "right_endpoint";
 static const std::string BASE_LINK = "/base";
 
 
@@ -66,7 +64,7 @@ int main(int argc, char *argv[])
   // Load the Robot Viz Tools for publishing to Rviz
   ROS_INFO_STREAM_NAMED("temp","Loading visualiztion tools");
   block_grasp_generator::VisualizationToolsPtr visual_tools_;
-  visual_tools_.reset(new block_grasp_generator::VisualizationTools( RVIZ_MARKER_TOPIC, BASE_LINK));
+  visual_tools_.reset(new block_grasp_generator::VisualizationTools( BASE_LINK));
   visual_tools_->setEEGroupName(EE_GROUP);
   visual_tools_->setPlanningGroupName(PLANNING_GROUP_NAME);
 

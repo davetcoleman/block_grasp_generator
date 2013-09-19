@@ -51,10 +51,6 @@
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_state/conversions.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
-//#include <moveit/plan_execution/plan_execution.h>
-//#include <moveit/plan_execution/plan_with_sensing.h>
-//#include <moveit/trajectory_processing/trajectory_tools.h> // for plan_execution
-//#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 // Rviz
 #include <visualization_msgs/Marker.h>
@@ -68,22 +64,9 @@
 namespace block_grasp_generator
 {
 
-
-// ClamArm Specific
-/*
-//static const std::string EE_LINK = "gripper_roll_link";
-static const std::string EE_PARENT_LINK = "gripper_roll_link";
-static const std::string PLANNING_GROUP_NAME = "arm";
-static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
-static const std::string EE_GROUP = "gripper_group";
-static const std::string EE_JOINT = "gripper_finger_joint"; // TODO: remove this dependency!!
-static const std::string BASE_LINK = "/base_link";
-*/
 // Baxter specific
-//static const std::string EE_LINK = "gripper_roll_link";
 static const std::string EE_PARENT_LINK = "right_wrist";
 static const std::string PLANNING_GROUP_NAME = "right_arm";
-static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 static const std::string EE_GROUP = "right_hand";
 static const std::string EE_JOINT = "right_endpoint";
 static const std::string BASE_LINK = "/base";
@@ -126,7 +109,7 @@ public:
 
     // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
-    visual_tools_.reset(new block_grasp_generator::VisualizationTools(RVIZ_MARKER_TOPIC, BASE_LINK));
+    visual_tools_.reset(new block_grasp_generator::VisualizationTools(BASE_LINK));
     visual_tools_->setLifetime(40.0);
     visual_tools_->setMuted(false);
     visual_tools_->setEEGroupName(grasp_data_.ee_group_);

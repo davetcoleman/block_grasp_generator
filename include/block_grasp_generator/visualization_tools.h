@@ -68,6 +68,7 @@ namespace block_grasp_generator
 static const std::string ROBOT_DESCRIPTION="robot_description";
 static const std::string COLLISION_TOPIC = "/collision_object";
 static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object";
+static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 
 enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE, ORANGE };
 
@@ -79,9 +80,10 @@ private:
   ros::NodeHandle nh_;
 
   // ROS publishers
-  ros::Publisher rviz_marker_pub_;
-  ros::Publisher pub_collision_obj_; // for MoveIt
-  ros::Publisher pub_attach_collision_obj_; // for MoveIt
+  ros::Publisher pub_rviz_marker_; // for rviz visualization markers
+  ros::Publisher pub_collision_obj_; // for MoveIt collision objects
+  ros::Publisher pub_attach_collision_obj_; // for MoveIt attached objects
+  ros::Publisher pub_display_path_; // for MoveIt trajectories
 
   // Pointer to a Planning Scene Monitor
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
@@ -118,13 +120,14 @@ public:
   /**
    * \brief Constructor with planning scene
    */
-  VisualizationTools(std::string marker_topic, std::string base_link,
-    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
+  VisualizationTools(std::string base_link, 
+    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+    std::string marker_topic = RVIZ_MARKER_TOPIC);
 
   /**
    * \brief Constructor w/o planning scene passed in
    */
-  VisualizationTools(std::string marker_topic, std::string base_link = "base");
+  VisualizationTools(std::string base_link = "base", std::string marker_topic = RVIZ_MARKER_TOPIC);
 
   /**
    * \brief Deconstructor
@@ -249,7 +252,11 @@ public:
   planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor()
   {
     if( !planning_scene_monitor_ )
+    {
+      ROS_ERROR_STREAM_NAMED("temp","loading planning scene");
+
       loadPlanningSceneMonitor();
+    }
 
     return planning_scene_monitor_;
   }
@@ -275,10 +282,10 @@ public:
   /**
    * \brief Animate trajectory in rviz
    * \param trajectory_msg the actual plan
-   * \param start_state where the robot begins
+   * \param waitTrajectory whether we need to wait for the animation to complete
    * \return true if no errors
    */
-  bool publishTrajectoryPath(const moveit_msgs::RobotTrajectory& trajectory_msg);
+  bool publishTrajectoryPath(const moveit_msgs::RobotTrajectory& trajectory_msg, bool waitTrajectory);
 
   /**
    * \brief Get the RGB value of standard colors
@@ -293,7 +300,23 @@ public:
    */
   const std::string& getEEParentLink()
   {
+    // Make sure we already loaded the EE markers
+    loadEEMarker();
+
     return ee_parent_link_;
+  }
+
+
+  bool isMarkerPubLoaded()
+  {
+    if( !pub_rviz_marker_ )
+    {
+    ROS_ERROR_STREAM_NAMED("temp","Pub Rviz Marker is not loaded. this is a HACK! - todo");
+    pub_rviz_marker_ = nh_.advertise<visualization_msgs::Marker>(marker_topic_, 10);
+    ROS_DEBUG_STREAM_NAMED("viz_tools","Visualizing rviz markers on topic " << marker_topic_);      
+    }
+    
+    return pub_rviz_marker_;
   }
 
 }; // class
