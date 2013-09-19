@@ -20,23 +20,36 @@ find_package(catkin REQUIRED
   std_msgs
 )
 
+# Visualization Tools Library
+add_library(${PROJECT_NAME}_visualization_tools
+  src/visualization_tools.cpp
+)
+target_link_libraries(${PROJECT_NAME}_visualization_tools 
+  ${catkin_LIBRARIES} ${Boost_LIBRARIES}
+)
+
 # Grasp Generator Library
-add_library(${PROJECT_NAME}_block_grasp_generator
+add_library(${PROJECT_NAME}
   src/block_grasp_generator.cpp
 )
-target_link_libraries(${PROJECT_NAME}_block_grasp_generator ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} 
+  ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PROJECT_NAME}_visualization_tools
+)
 
 # Grasp Filter Library
-add_library(${PROJECT_NAME}_grasp_filter
+add_library(${PROJECT_NAME}_filter
   src/grasp_filter.cpp
 )
-target_link_libraries(${PROJECT_NAME}_grasp_filter ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_filter 
+  ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${PROJECT_NAME}_visualization_tools
+)
 
 # Catkin
 catkin_package(
   LIBRARIES
-    ${PROJECT_NAME}_block_grasp_generator
-#    ${PROJECT_NAME}_grasp_filter
+    ${PROJECT_NAME}
+    ${PROJECT_NAME}_filter
+    ${PROJECT_NAME}_visualization_tools
   CATKIN_DEPENDS
     roscpp
     std_msgs
@@ -66,10 +79,15 @@ link_directories(${catkin_LIBRARY_DIRS})
 
 # Test executable
 add_executable(grasp_filter_test src/grasp_filter_test.cpp)
-target_link_libraries(grasp_filter_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator ${PROJECT_NAME}_grasp_filter)
+target_link_libraries(grasp_filter_test 
+  ${catkin_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_filter ${PROJECT_NAME}_visualization_tools
+)
 
 # Test executable
-add_executable(robot_viz_tool_test src/robot_viz_tool_test.cpp)
-target_link_libraries(robot_viz_tool_test ${catkin_LIBRARIES} ${PROJECT_NAME}_block_grasp_generator)
+add_executable(visualization_tools_test src/visualization_tools_test.cpp)
+target_link_libraries(visualization_tools_test 
+  ${catkin_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_visualization_tools
+)
+
 
 

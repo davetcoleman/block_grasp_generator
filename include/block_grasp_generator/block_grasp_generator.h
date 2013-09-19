@@ -49,7 +49,7 @@
 #include <eigen_conversions/eigen_msg.h>
 
 // Rviz
-#include <block_grasp_generator/robot_viz_tools.h>
+#include <block_grasp_generator/visualization_tools.h>
 
 // C++
 #include <math.h>
@@ -76,6 +76,8 @@ struct RobotGraspData
   sensor_msgs::JointState grasp_posture_; // when the end effector is in "close" position
   std::string base_link_; // name of global frame with z pointing up
   std::string ee_parent_link_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
+  std::string ee_group_; // the end effector name
+  std::string ee_joint_; // the joint to actuate for gripping
   double grasp_depth_; // distance from center point of object to end effector
   int angle_resolution_; // generate grasps at PI/angle_resolution increments
   double approach_retreat_desired_dist_; // how far back from the grasp position the pregrasp phase should be
@@ -94,18 +96,30 @@ private:
   enum grasp_direction_t {UP, DOWN};
 
   // class for publishing stuff to rviz
-  block_grasp_generator::RobotVizToolsPtr rviz_tools_;
+  block_grasp_generator::VisualizationToolsPtr rviz_tools_;
 
   // Transform from frame of box to global frame
   Eigen::Affine3d block_global_transform_; 
 
+  // Choose whether the end effector is animated and shown for each potential grasp
+  bool animate_;
+
 public:
 
   // Constructor
-  BlockGraspGenerator(RobotVizToolsPtr rviz_tools);
+  BlockGraspGenerator(VisualizationToolsPtr rviz_tools);
 
   // Destructor
   ~BlockGraspGenerator();
+
+  /**
+   * \brief Choose whether the end effector is animated and shown for each potential grasp
+            only really useful for debugging
+   */
+  void setAnimateGrasps(bool animate)
+  {
+    animate_ = animate;
+  }
 
   // Create all possible grasp positions for a block
   bool generateGrasps(const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data,

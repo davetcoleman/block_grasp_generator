@@ -38,8 +38,9 @@ namespace block_grasp_generator
 {
 
 // Constructor
-BlockGraspGenerator::BlockGraspGenerator(RobotVizToolsPtr rviz_tools) :
-  rviz_tools_(rviz_tools)
+BlockGraspGenerator::BlockGraspGenerator(VisualizationToolsPtr rviz_tools) :
+  rviz_tools_(rviz_tools),
+  animate_(true)
 {
 }
 
@@ -65,7 +66,7 @@ bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, 
   ROS_INFO_STREAM_NAMED("grasp", "Generated " << possible_grasps.size() << " grasps." );
 
   // Visualize results
-  //visualizeGrasps(possible_grasps, block_pose, grasp_data);
+  visualizeGrasps(possible_grasps, block_pose, grasp_data);
 
   return true;
 }
@@ -183,6 +184,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 
 
     // DEBUG - show original grasp pose before tranform to gripper frame
+    if( true )
     {
       tf::poseEigenToMsg(block_global_transform_ * grasp_pose, grasp_pose_msg.pose);
       rviz_tools_->publishArrow(grasp_pose_msg.pose, GREEN);
@@ -271,6 +273,12 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
     return;
   }
 
+  if( !animate_ )
+  {
+    ROS_DEBUG_STREAM_NAMED("grasp","Not visualizing grasps - animation set to false.");
+    return;
+  }
+
   ROS_DEBUG_STREAM_NAMED("grasp","Visualizing " << possible_grasps.size() << " grasps");
 
   int i = 0;
@@ -287,17 +295,8 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
 
     //ROS_DEBUG_STREAM_NAMED("grasp","Visualizing grasp pose " << i);
 
-    // Animate or just show final position?
-    if( true )
-    {
       animateGrasp(*grasp_it, grasp_data);
-    }
-    else
-    {
-      rviz_tools_->publishSphere(grasp_it->grasp_pose.pose);
-      rviz_tools_->publishArrow(grasp_it->grasp_pose.pose, BLUE);
-      rviz_tools_->publishEEMarkers(grasp_it->grasp_pose.pose);
-    }
+
 
     // Show robot joint positions if available
     /*
@@ -332,13 +331,10 @@ void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, co
   std::string text = "Grasp Quality: " + boost::lexical_cast<std::string>(int(grasp.grasp_quality*100)) + "%";
   rviz_tools_->publishText(grasp_pose, text);
 
-  // Publish original grasp pose
-  rviz_tools_->publishArrow(grasp_pose, GREEN);
-
   // Convert the grasp pose into the frame of reference of the approach/retreat frame_id
 
   // Animate the movement - for ee approach direction
-  double animation_resulution = 0.1; // the higher the better the resolution
+  double animation_resulution = 0.25; // the lower the better the resolution
   for(double percent = 0; percent < 1; percent += animation_resulution)
   {
     if( !ros::ok() ) // Check that ROS is still ok and that user isn't trying to quit
@@ -375,7 +371,7 @@ void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, co
     //rviz_tools_->publishArrow(pre_grasp_pose, BLUE);
     rviz_tools_->publishEEMarkers(pre_grasp_pose);
 
-    ros::Duration(0.005).sleep();
+    ros::Duration(0.001).sleep();
   }
 
 }

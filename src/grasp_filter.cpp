@@ -39,7 +39,7 @@ namespace block_grasp_generator
 
 // Constructor
 GraspFilter::GraspFilter( const std::string& base_link, bool rviz_verbose,
-                          RobotVizToolsPtr rviz_tools, const std::string& planning_group ):
+                          VisualizationToolsPtr rviz_tools, const std::string& planning_group ):
   base_link_(base_link),
   rviz_verbose_(rviz_verbose),
   rviz_tools_(rviz_tools),

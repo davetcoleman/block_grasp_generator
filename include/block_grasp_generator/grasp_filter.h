@@ -51,7 +51,7 @@
 // Rviz
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include "robot_viz_tools.h"
+#include <block_grasp_generator/visualization_tools.h>
 
 // MoveIt
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
@@ -65,12 +65,6 @@
 
 namespace block_grasp_generator
 {
-
-//static const std::string EE_GROUP = "gripper_group";
-//static const std::string EE_NAME = "end_effector";
-//static const std::string PLANNING_GROUP_NAME = "arm";
-//static const std::string RVIZ_MARKER_TOPIC = "/end_effectors";
-//static const double BLOCK_SIZE = 0.04;
 
 // Struct for passing parameters to threads, for cleaner code
 struct IkThreadStruct
@@ -122,13 +116,13 @@ private:
   bool rviz_verbose_;
 
   // class for publishing stuff to rviz
-  block_grasp_generator::RobotVizToolsPtr rviz_tools_;
+  block_grasp_generator::VisualizationToolsPtr rviz_tools_;
 
 public:
 
   // Constructor
   GraspFilter( const std::string& base_link, bool rviz_verbose, 
-               RobotVizToolsPtr rviz_tools, const std::string& planning_group );
+               VisualizationToolsPtr rviz_tools, const std::string& planning_group );
 
   // Destructor
   ~GraspFilter();

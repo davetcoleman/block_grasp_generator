@@ -50,12 +50,11 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/robot_state/robot_state.h>
 #include <moveit/robot_state/conversions.h>
-//#include <moveit/robot_state/joint_state_group.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
-#include <moveit/plan_execution/plan_execution.h>
-#include <moveit/plan_execution/plan_with_sensing.h>
-#include <moveit/trajectory_processing/trajectory_tools.h> // for plan_execution
-#include <moveit/trajectory_processing/iterative_time_parameterization.h>
+//#include <moveit/plan_execution/plan_execution.h>
+//#include <moveit/plan_execution/plan_with_sensing.h>
+//#include <moveit/trajectory_processing/trajectory_tools.h> // for plan_execution
+//#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 // Rviz
 #include <visualization_msgs/Marker.h>
@@ -64,6 +63,7 @@
 // Grasp 
 #include <block_grasp_generator/block_grasp_generator.h>
 #include <block_grasp_generator/grasp_filter.h>
+#include <block_grasp_generator/visualization_tools.h>
 
 namespace block_grasp_generator
 {
@@ -109,7 +109,7 @@ private:
   block_grasp_generator::BlockGraspGeneratorPtr block_grasp_generator_;
 
   // class for publishing stuff to rviz
-  block_grasp_generator::RobotVizToolsPtr rviz_tools_;
+  block_grasp_generator::VisualizationToolsPtr visual_tools_;
 
   // class for filter object
   block_grasp_generator::GraspFilterPtr grasp_filter_;
@@ -126,19 +126,21 @@ public:
 
     // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
-    rviz_tools_.reset(new block_grasp_generator::RobotVizTools(RVIZ_MARKER_TOPIC, EE_GROUP, PLANNING_GROUP_NAME, BASE_LINK));
-    rviz_tools_->setLifetime(40.0);
-    rviz_tools_->setMuted(false);
+    visual_tools_.reset(new block_grasp_generator::VisualizationTools(RVIZ_MARKER_TOPIC, BASE_LINK));
+    visual_tools_->setLifetime(40.0);
+    visual_tools_->setMuted(false);
+    visual_tools_->setEEGroupName(grasp_data_.ee_group_);
+    visual_tools_->setPlanningGroupName(PLANNING_GROUP_NAME);
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp generator
     loadRobotGraspData(); // Load robot specific data
-    block_grasp_generator_.reset( new block_grasp_generator::BlockGraspGenerator(rviz_tools_) );
+    block_grasp_generator_.reset( new block_grasp_generator::BlockGraspGenerator(visual_tools_) );
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp filter
     bool rviz_verbose = true;
-    grasp_filter_.reset(new block_grasp_generator::GraspFilter(BASE_LINK, rviz_verbose, rviz_tools_, PLANNING_GROUP_NAME) );
+    grasp_filter_.reset(new block_grasp_generator::GraspFilter(BASE_LINK, rviz_verbose, visual_tools_, PLANNING_GROUP_NAME) );
 
     // ---------------------------------------------------------------------------------------------
     // Generate grasps for a bunch of random blocks
@@ -153,14 +155,14 @@ public:
 
       generateRandomBlock(block_pose);
       //getTestBlock(block_pose);
-      rviz_tools_->publishBlock(block_pose, BLOCK_SIZE, false);
+      visual_tools_->publishBlock(block_pose, BLOCK_SIZE, false);
 
       possible_grasps.clear();
 
       // Generate set of grasps for one block
-      //rviz_tools_->setMuted(true); // we don't want to see unfiltered grasps
+      //visual_tools_->setMuted(true); // we don't want to see unfiltered grasps
       block_grasp_generator_->generateGrasps( block_pose, grasp_data_, possible_grasps);
-      rviz_tools_->setMuted(false);
+      visual_tools_->setMuted(false);
 
       // Filter the grasp for only the ones that are reachable
       grasp_filter_->filterGrasps(possible_grasps);
