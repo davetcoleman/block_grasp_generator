@@ -334,7 +334,7 @@ void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, co
   // Convert the grasp pose into the frame of reference of the approach/retreat frame_id
 
   // Animate the movement - for ee approach direction
-  double animation_resulution = 0.25; // the lower the better the resolution
+  double animation_resulution = 0.1; // the lower the better the resolution
   for(double percent = 0; percent < 1; percent += animation_resulution)
   {
     if( !ros::ok() ) // Check that ROS is still ok and that user isn't trying to quit
@@ -371,7 +371,7 @@ void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, co
     //rviz_tools_->publishArrow(pre_grasp_pose, BLUE);
     rviz_tools_->publishEEMarkers(pre_grasp_pose);
 
-    ros::Duration(0.001).sleep();
+    ros::Duration(0.01).sleep();
   }
 
 }
