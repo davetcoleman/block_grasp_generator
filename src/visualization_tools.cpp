@@ -358,8 +358,8 @@ bool VisualizationTools::loadEEMarker()
   try
   {
     ee_parent_link_ = eef.parent_link; // save the name of the link for later use
-    // FUTURE: tf::poseEigenToTF(robot_state.getGlobalLinkTransform(eef.parent_link), tf_root_to_link_);
-    tf::poseEigenToTF(robot_state.getLinkState(eef.parent_link)->getGlobalLinkTransform(), tf_root_to_link_);
+    tf::poseEigenToTF(robot_state.getGlobalLinkTransform(eef.parent_link), tf_root_to_link_);
+    //tf::poseEigenToTF(robot_state.getLinkState(eef.parent_link)->getGlobalLinkTransform(), tf_root_to_link_);
   }
   catch(...)
   {
