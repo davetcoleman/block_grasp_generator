@@ -44,7 +44,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <manipulation_msgs/Grasp.h>
+#include <moveit_msgs/Grasp.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
@@ -69,8 +69,8 @@ namespace block_grasp_generator
 // Struct for passing parameters to threads, for cleaner code
 struct IkThreadStruct
 {
-  IkThreadStruct(std::vector<manipulation_msgs::Grasp> &possible_grasps, // the input
-                 std::vector<manipulation_msgs::Grasp> &filtered_grasps, // the result
+  IkThreadStruct(std::vector<moveit_msgs::Grasp> &possible_grasps, // the input
+                 std::vector<moveit_msgs::Grasp> &filtered_grasps, // the result
                  int grasps_id_start,
                  int grasps_id_end,
                  kinematics::KinematicsBasePtr kin_solver,
@@ -87,8 +87,8 @@ struct IkThreadStruct
       thread_id_(thread_id)
   {
   }
-  std::vector<manipulation_msgs::Grasp> &possible_grasps_;
-  std::vector<manipulation_msgs::Grasp> &filtered_grasps_;
+  std::vector<moveit_msgs::Grasp> &possible_grasps_;
+  std::vector<moveit_msgs::Grasp> &filtered_grasps_;
   int grasps_id_start_;
   int grasps_id_end_;
   kinematics::KinematicsBasePtr kin_solver_;
@@ -128,14 +128,14 @@ public:
   ~GraspFilter();
 
   // Of an array of grasps, choose just one for use
-  bool chooseBestGrasp( const std::vector<manipulation_msgs::Grasp>& possible_grasps,
-                        manipulation_msgs::Grasp& chosen );
+  bool chooseBestGrasp( const std::vector<moveit_msgs::Grasp>& possible_grasps,
+                        moveit_msgs::Grasp& chosen );
 
   // Take the nth grasp from the array
-  bool filterNthGrasp(std::vector<manipulation_msgs::Grasp>& possible_grasps, int n);
+  bool filterNthGrasp(std::vector<moveit_msgs::Grasp>& possible_grasps, int n);
 
   // Choose the 1st grasp that is kinematically feasible
-  bool filterGrasps(std::vector<manipulation_msgs::Grasp>& possible_grasps);
+  bool filterGrasps(std::vector<moveit_msgs::Grasp>& possible_grasps);
 
 private:
 

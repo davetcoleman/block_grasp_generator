@@ -8,7 +8,6 @@ find_package(Boost REQUIRED thread system)
 find_package(catkin REQUIRED
   roscpp
   std_msgs
-  sensor_msgs
   visualization_msgs 
   eigen_conversions 
   moveit_ros_planning 
@@ -18,6 +17,7 @@ find_package(catkin REQUIRED
   tf
   tf_conversions
   std_msgs
+  trajectory_msgs
 )
 
 # Visualization Tools Library
@@ -53,7 +53,7 @@ catkin_package(
   CATKIN_DEPENDS
     roscpp
     std_msgs
-    sensor_msgs
+    trajectory_msgs
     visualization_msgs 
     eigen_conversions 
     moveit_ros_planning 
@@ -87,6 +87,12 @@ target_link_libraries(grasp_filter_test
 add_executable(visualization_tools_test src/visualization_tools_test.cpp)
 target_link_libraries(visualization_tools_test 
   ${catkin_LIBRARIES} ${PROJECT_NAME} ${PROJECT_NAME}_visualization_tools
+)
+
+# Test executable
+add_executable(block_grasp_generator_test src/block_grasp_generator_test.cpp)
+target_link_libraries(block_grasp_generator_test 
+  ${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES}
 )
 
 

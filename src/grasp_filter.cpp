@@ -55,7 +55,7 @@ GraspFilter::~GraspFilter()
 {
 }
 
-bool GraspFilter::chooseBestGrasp( const std::vector<manipulation_msgs::Grasp>& possible_grasps, manipulation_msgs::Grasp& chosen )
+bool GraspFilter::chooseBestGrasp( const std::vector<moveit_msgs::Grasp>& possible_grasps, moveit_msgs::Grasp& chosen )
 {
   // TODO: better logic here
   if( possible_grasps.empty() )
@@ -67,7 +67,7 @@ bool GraspFilter::chooseBestGrasp( const std::vector<manipulation_msgs::Grasp>& 
 }
 
 // Return grasps that are kinematically feasible
-bool GraspFilter::filterGrasps(std::vector<manipulation_msgs::Grasp>& possible_grasps)
+bool GraspFilter::filterGrasps(std::vector<moveit_msgs::Grasp>& possible_grasps)
 {
   // -----------------------------------------------------------------------------------------------
   // Error check
@@ -133,7 +133,7 @@ bool GraspFilter::filterGrasps(std::vector<manipulation_msgs::Grasp>& possible_g
 
     // -----------------------------------------------------------------------------------------------
     // Loop through poses and find those that are kinematically feasible
-    std::vector<manipulation_msgs::Grasp> filtered_grasps;
+    std::vector<moveit_msgs::Grasp> filtered_grasps;
 
     boost::thread_group bgroup; // create a group of threads
     boost::mutex lock; // used for sharing the same data structures
@@ -220,7 +220,7 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
 
       // Copy solution to manipulation_msg so that we can use it later
       // Note: doesn't actually belong here TODO: fix this hack
-      ik_thread_struct.possible_grasps_[i].grasp_posture.position = solution;
+      //ik_thread_struct.possible_grasps_[i].grasp_posture.position = solution;
 
       // Lock the result vector so we can add to it for a second
       {

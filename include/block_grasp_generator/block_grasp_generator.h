@@ -42,8 +42,9 @@
 #include <ros/ros.h>
 #include <tf_conversions/tf_eigen.h>
 #include <geometry_msgs/PoseArray.h>
-#include <sensor_msgs/JointState.h>
-#include <manipulation_msgs/Grasp.h>
+//#include <sensor_msgs/JointState.h>
+#include <trajectory_msgs/JointTrajectory.h>
+#include <moveit_msgs/Grasp.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <eigen_conversions/eigen_msg.h>
@@ -72,8 +73,8 @@ struct RobotGraspData
     block_size_(0.04)
   {}
   geometry_msgs::Pose grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
-  sensor_msgs::JointState pre_grasp_posture_; // when the end effector is in "open" position
-  sensor_msgs::JointState grasp_posture_; // when the end effector is in "close" position
+  trajectory_msgs::JointTrajectory pre_grasp_posture_; // when the end effector is in "open" position
+  trajectory_msgs::JointTrajectory grasp_posture_; // when the end effector is in "close" position
   std::string base_link_; // name of global frame with z pointing up
   std::string ee_parent_link_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
   std::string ee_group_; // the end effector name
@@ -123,7 +124,7 @@ public:
 
   // Create all possible grasp positions for a block
   bool generateGrasps(const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data,
-                      std::vector<manipulation_msgs::Grasp>& possible_grasps);
+                      std::vector<moveit_msgs::Grasp>& possible_grasps);
 
   /**
    * \brief Show all grasps in Rviz
@@ -131,14 +132,14 @@ public:
    * \param block_pose
    * \param grasp_data - custom settings for a robot's geometry
    */ 
-  void visualizeGrasps(const std::vector<manipulation_msgs::Grasp>& possible_grasps,
+  void visualizeGrasps(const std::vector<moveit_msgs::Grasp>& possible_grasps,
     const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data);
 
   /**
    * \brief Animate the pre grasp, grasp, and post-grasp process - for testing and visualization
    * \param grasp - a fully completed manipulation message that descibes a grasp
    */
-  void animateGrasp(const manipulation_msgs::Grasp &grasp, const RobotGraspData& grasp_data);
+  void animateGrasp(const moveit_msgs::Grasp &grasp, const RobotGraspData& grasp_data);
 
   static void printBlockGraspData(const RobotGraspData& data)
   {
@@ -157,7 +158,7 @@ public:
 private:
 
   // Create grasp positions in one axis
-  bool generateAxisGrasps(std::vector<manipulation_msgs::Grasp>& possible_grasps, grasp_axis_t axis,
+  bool generateAxisGrasps(std::vector<moveit_msgs::Grasp>& possible_grasps, grasp_axis_t axis,
                           grasp_direction_t direction, const RobotGraspData& grasp_data);
                           
 }; // end of class

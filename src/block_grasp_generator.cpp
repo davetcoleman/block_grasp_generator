@@ -51,7 +51,7 @@ BlockGraspGenerator::~BlockGraspGenerator()
 
 // Create all possible grasp positions for a block
 bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data,
-  std::vector<manipulation_msgs::Grasp>& possible_grasps)
+  std::vector<moveit_msgs::Grasp>& possible_grasps)
 {
   // ---------------------------------------------------------------------------------------------
   // Create a transform from the block's frame (center of block) to /base_link
@@ -72,7 +72,7 @@ bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, 
 }
 
 // Create grasp positions in one axis
-bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Grasp>& possible_grasps, grasp_axis_t axis,
+bool BlockGraspGenerator::generateAxisGrasps(std::vector<moveit_msgs::Grasp>& possible_grasps, grasp_axis_t axis,
   grasp_direction_t direction, const RobotGraspData& grasp_data)
 {
 
@@ -80,16 +80,16 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
   // Grasp parameters
 
   // Create re-usable approach motion
-  manipulation_msgs::GripperTranslation gripper_approach;
-  gripper_approach.direction.header.stamp = ros::Time::now();
-  gripper_approach.desired_distance = grasp_data.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
-  gripper_approach.min_distance = grasp_data.approach_retreat_min_dist_; // half of the desired? Untested.
+  moveit_msgs::GripperTranslation pre_grasp_approach;
+  pre_grasp_approach.direction.header.stamp = ros::Time::now();
+  pre_grasp_approach.desired_distance = grasp_data.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
+  pre_grasp_approach.min_distance = grasp_data.approach_retreat_min_dist_; // half of the desired? Untested.
 
   // Create re-usable retreat motion
-  manipulation_msgs::GripperTranslation gripper_retreat;
-  gripper_retreat.direction.header.stamp = ros::Time::now();
-  gripper_retreat.desired_distance = grasp_data.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
-  gripper_retreat.min_distance = grasp_data.approach_retreat_min_dist_; // half of the desired? Untested.
+  moveit_msgs::GripperTranslation post_grasp_retreat;
+  post_grasp_retreat.direction.header.stamp = ros::Time::now();
+  post_grasp_retreat.desired_distance = grasp_data.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
+  post_grasp_retreat.min_distance = grasp_data.approach_retreat_min_dist_; // half of the desired? Untested.
 
   // Create re-usable blank pose
   geometry_msgs::PoseStamped grasp_pose_msg;
@@ -124,7 +124,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
   for(int i = 0; i <= grasp_data.angle_resolution_; ++i)
   {
     // Create a Grasp message
-    manipulation_msgs::Grasp new_grasp;
+    moveit_msgs::Grasp new_grasp;
 
     // Calculate grasp pose
     xb = radius*cos(theta1);
@@ -222,18 +222,18 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     // With respect to the base link/world frame
 
     // Approach
-    gripper_approach.direction.header.frame_id = grasp_data.base_link_;
-    gripper_approach.direction.vector.x = 0;
-    gripper_approach.direction.vector.y = 0;
-    gripper_approach.direction.vector.z = -1; // Approach direction (negative z axis)  // TODO: document this assumption
-    new_grasp.approach = gripper_approach;
+    pre_grasp_approach.direction.header.frame_id = grasp_data.base_link_;
+    pre_grasp_approach.direction.vector.x = 0;
+    pre_grasp_approach.direction.vector.y = 0;
+    pre_grasp_approach.direction.vector.z = -1; // Approach direction (negative z axis)  // TODO: document this assumption
+    new_grasp.pre_grasp_approach = pre_grasp_approach;
 
     // Retreat
-    gripper_retreat.direction.header.frame_id = grasp_data.base_link_;
-    gripper_retreat.direction.vector.x = 0;
-    gripper_retreat.direction.vector.y = 0;
-    gripper_retreat.direction.vector.z = 1; // Retreat direction (pos z axis)
-    new_grasp.retreat = gripper_retreat;
+    post_grasp_retreat.direction.header.frame_id = grasp_data.base_link_;
+    post_grasp_retreat.direction.vector.x = 0;
+    post_grasp_retreat.direction.vector.y = 0;
+    post_grasp_retreat.direction.vector.z = 1; // Retreat direction (pos z axis)
+    new_grasp.post_grasp_retreat = post_grasp_retreat;
 
     // Add to vector
     possible_grasps.push_back(new_grasp);
@@ -242,18 +242,18 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
     // Approach with respect to end effector orientation
 
     // Approach
-    gripper_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_approach.direction.vector.x = 0;
-    gripper_approach.direction.vector.y = 0;
-    gripper_approach.direction.vector.z = 1;
-    new_grasp.approach = gripper_approach;
+    pre_grasp_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
+    pre_grasp_approach.direction.vector.x = 0;
+    pre_grasp_approach.direction.vector.y = 0;
+    pre_grasp_approach.direction.vector.z = 1;
+    new_grasp.pre_grasp_approach = pre_grasp_approach;
 
     // Retreat
-    gripper_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
-    gripper_retreat.direction.vector.x = 0;
-    gripper_retreat.direction.vector.y = 0;
-    gripper_retreat.direction.vector.z = -1;
-    new_grasp.retreat = gripper_retreat;
+    post_grasp_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
+    post_grasp_retreat.direction.vector.x = 0;
+    post_grasp_retreat.direction.vector.y = 0;
+    post_grasp_retreat.direction.vector.z = -1;
+    new_grasp.post_grasp_retreat = post_grasp_retreat;
 
     // Add to vector
     possible_grasps.push_back(new_grasp);
@@ -264,7 +264,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<manipulation_msgs::Gras
 }
 
 // Show all grasps in Rviz
-void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::Grasp>& possible_grasps,
+void BlockGraspGenerator::visualizeGrasps(const std::vector<moveit_msgs::Grasp>& possible_grasps,
   const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data)
 {
   if(rviz_tools_->isMuted())
@@ -282,7 +282,7 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
   ROS_DEBUG_STREAM_NAMED("grasp","Visualizing " << possible_grasps.size() << " grasps");
 
   int i = 0;
-  for(std::vector<manipulation_msgs::Grasp>::const_iterator grasp_it = possible_grasps.begin();
+  for(std::vector<moveit_msgs::Grasp>::const_iterator grasp_it = possible_grasps.begin();
       grasp_it < possible_grasps.end(); ++grasp_it)
   {
     if( !ros::ok() )  // Check that ROS is still ok and that user isn't trying to quit
@@ -313,7 +313,7 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<manipulation_msgs::G
   }
 }
 
-void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, const RobotGraspData& grasp_data)
+void BlockGraspGenerator::animateGrasp(const moveit_msgs::Grasp &grasp, const RobotGraspData& grasp_data)
 {
   // Grasp Pose Variables
   geometry_msgs::Pose grasp_pose = grasp.grasp_pose.pose;
@@ -325,7 +325,7 @@ void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, co
   Eigen::Affine3d pre_grasp_pose_eigen;
 
   // Approach direction variables
-  Eigen::Vector3d approach_direction_local;
+  Eigen::Vector3d pre_grasp_approach_direction_local;
 
   // Display Grasp Score
   std::string text = "Grasp Quality: " + boost::lexical_cast<std::string>(int(grasp.grasp_quality*100)) + "%";
@@ -345,25 +345,25 @@ void BlockGraspGenerator::animateGrasp(const manipulation_msgs::Grasp &grasp, co
 
     // The direction of the pre-grasp
     // Calculate the current animation position based on the percent
-    Eigen::Vector3d approach_direction = Eigen::Vector3d(
-      -1 * grasp.approach.direction.vector.x * grasp.approach.desired_distance * (1-percent),
-      -1 * grasp.approach.direction.vector.y * grasp.approach.desired_distance * (1-percent),
-      -1 * grasp.approach.direction.vector.z * grasp.approach.desired_distance * (1-percent)
+    Eigen::Vector3d pre_grasp_approach_direction = Eigen::Vector3d(
+      -1 * grasp.pre_grasp_approach.direction.vector.x * grasp.pre_grasp_approach.desired_distance * (1-percent),
+      -1 * grasp.pre_grasp_approach.direction.vector.y * grasp.pre_grasp_approach.desired_distance * (1-percent),
+      -1 * grasp.pre_grasp_approach.direction.vector.z * grasp.pre_grasp_approach.desired_distance * (1-percent)
     );
 
     // Decide if we need to change the approach_direction to the local frame of the end effector orientation
-    if( grasp.approach.direction.header.frame_id == grasp_data.ee_parent_link_ )
+    if( grasp.pre_grasp_approach.direction.header.frame_id == grasp_data.ee_parent_link_ )
     {
       // Apply/compute the approach_direction vector in the local frame of the grasp_pose orientation
-      approach_direction_local = grasp_pose_eigen.rotation() * approach_direction;
+      pre_grasp_approach_direction_local = grasp_pose_eigen.rotation() * pre_grasp_approach_direction;
     }
     else
     {
-      approach_direction_local = approach_direction; //grasp_pose_eigen.rotation() * approach_direction;
+      pre_grasp_approach_direction_local = pre_grasp_approach_direction; //grasp_pose_eigen.rotation() * pre_grasp_approach_direction;
     }
 
     // Update the grasp matrix usign the new locally-framed approach_direction
-    pre_grasp_pose_eigen.translation() += approach_direction_local;
+    pre_grasp_pose_eigen.translation() += pre_grasp_approach_direction_local;
 
     // Convert eigen pre-grasp position back to regular message
     tf::poseEigenToMsg(pre_grasp_pose_eigen, pre_grasp_pose);
