@@ -253,8 +253,6 @@ public:
   {
     if( !planning_scene_monitor_ )
     {
-      ROS_ERROR_STREAM_NAMED("temp","loading planning scene");
-
       loadPlanningSceneMonitor();
     }
 

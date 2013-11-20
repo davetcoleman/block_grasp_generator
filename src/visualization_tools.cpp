@@ -791,7 +791,6 @@ bool VisualizationTools::publishTrajectoryPath(const moveit_msgs::RobotTrajector
   // Publish message
   pub_display_path_.publish(rviz_display);
 
-  ros::spinOnce();
   ros::Duration(0.1).sleep();
 
   // Wait the duration of the trajectory

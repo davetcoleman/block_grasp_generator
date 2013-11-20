@@ -220,6 +220,9 @@ public:
     block_pose.orientation.w = quat.w();
   }
 
+  /**
+   * \brief Get random double between min and max
+   */
   double fRand(double fMin, double fMax)
   {
     double f = (double)rand() / RAND_MAX;
