@@ -79,8 +79,8 @@ block_grasp_generator::RobotGraspData loadRobotGraspData(const std::string& side
   grasp_data.pre_grasp_posture_.header.stamp = ros::Time::now();
   // Name of joints:
   grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_thumb_joint");
-  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_index_finger_joint");
-  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_middle_finger_joint");
+  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_index_joint");
+  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_middle_joint");
   // Position of joints
   grasp_data.pre_grasp_posture_.points.resize(1);
   grasp_data.pre_grasp_posture_.points[0].positions.push_back(THUMB_JOINT_DOWN);
@@ -93,8 +93,8 @@ block_grasp_generator::RobotGraspData loadRobotGraspData(const std::string& side
   grasp_data.grasp_posture_.header.stamp = ros::Time::now();
   // Name of joints:
   grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_thumb_joint");
-  grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_index_finger_joint");
-  grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_middle_finger_joint");
+  grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_index_joint");
+  grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_middle_joint");
   // Position of joints
   grasp_data.grasp_posture_.points.resize(1);
   grasp_data.grasp_posture_.points[0].positions.push_back(THUMB_JOINT_DOWN);
