@@ -69,9 +69,15 @@ block_grasp_generator::RobotGraspData loadRobotGraspData(const std::string& side
   grasp_data.grasp_pose_to_eef_pose_.orientation.w = quat.w();
 
   // Position // approach vector?
-  grasp_data.grasp_pose_to_eef_pose_.position.x = -0.15;
-  grasp_data.grasp_pose_to_eef_pose_.position.y = 0;
-  grasp_data.grasp_pose_to_eef_pose_.position.z = 0;
+  //grasp_data.grasp_pose_to_eef_pose_.position.x = -0.15; // this is like an offset! useful! (but can't be -15cm here)
+  //0.055 ${reflect * 0.054} 0.018 from urdf grasping frame
+//  grasp_data.grasp_pose_to_eef_pose_.position.x = 0.055;
+//  grasp_data.grasp_pose_to_eef_pose_.position.y = -0.054; // right hand
+//  grasp_data.grasp_pose_to_eef_pose_.position.z = 0.018;
+
+  grasp_data.grasp_pose_to_eef_pose_.position.x = 0.054;//-0.054;
+//  grasp_data.grasp_pose_to_eef_pose_.position.y = -0.018 * 2;//-0.018; // right hand
+  grasp_data.grasp_pose_to_eef_pose_.position.z = 0.018;//0.101;
 
   // -------------------------------
   // Create pre-grasp posture (fingers open, thumb down)
@@ -113,7 +119,7 @@ block_grasp_generator::RobotGraspData loadRobotGraspData(const std::string& side
   grasp_data.approach_retreat_desired_dist_ = 0.3;
   grasp_data.approach_retreat_min_dist_ = 0.06;
   // distance from center point of object to end effector
-  grasp_data.grasp_depth_ = 0.12;
+  grasp_data.grasp_depth_ = 0.06;// in negative or 0 this makes the grasps on the other side of the object! (like from below)
 
   // generate grasps at PI/angle_resolution increments
   grasp_data.angle_resolution_ = 16;
