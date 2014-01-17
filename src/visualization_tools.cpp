@@ -57,7 +57,7 @@ VisualizationTools::VisualizationTools(std::string base_link, std::string marker
     floor_to_base_height_(0),
     marker_lifetime_(ros::Duration(30.0)),
     nh_("~"),
-    muted_(false)
+    muted_(true)
 {
   // Rviz Visualizations
   pub_rviz_marker_ = nh_.advertise<visualization_msgs::Marker>(marker_topic_, 10);
@@ -75,7 +75,7 @@ VisualizationTools::VisualizationTools(std::string base_link, std::string marker
 
   // Trajectory paths
   pub_display_path_ = nh_.advertise<moveit_msgs::DisplayTrajectory>
-    ("/move_group/display_planned_path", 10, true);
+    ("/move_group/display_planned_path", 10, false);
 
   // Cache the reusable markers
   loadRvizMarkers();

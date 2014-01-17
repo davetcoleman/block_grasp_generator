@@ -32,8 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Author: Bence Magyar
-   Desc:   Parameters specific to Baxter for performing pick-place
+/* Authors: Bence Magyar, Sammy Pfeiffer
+   Desc:   Parameters specific to REEM for performing pick-place
 */
 
 #include <block_grasp_generator/block_grasp_generator.h> // has datastructure
@@ -45,9 +45,9 @@ static const std::string ROBOT_DESCRIPTION="robot_description";
 static const std::string BASE_LINK = "base_link";
 
 // Copied from URDF \todo read straight from URDF?
-static const double THUMB_JOINT_DOWN = 1.5; //close
-static const double FINGER_JOINT_IN = 0.0; //close
-static const double FINGER_JOINT_OUT = 3.9; //open
+static const double THUMB_JOINT_DOWN = 2.0; //close
+static const double FINGER_JOINT_OPEN = 0.0; //open
+static const double FINGER_JOINT_CLOSED = 4.5; //close
 
 // robot dimensions
 static const double FLOOR_TO_BASE_HEIGHT = -0.9;
@@ -84,28 +84,30 @@ block_grasp_generator::RobotGraspData loadRobotGraspData(const std::string& side
   grasp_data.pre_grasp_posture_.header.frame_id = BASE_LINK;
   grasp_data.pre_grasp_posture_.header.stamp = ros::Time::now();
   // Name of joints:
-  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_thumb_joint");
-  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_index_joint");
+  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_index_joint"); // JOINTS MUST BE IN THIS ORDER... (controller listing order)
   grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_middle_joint");
+  grasp_data.pre_grasp_posture_.joint_names.push_back("hand_" + side + "_thumb_joint");
   // Position of joints
   grasp_data.pre_grasp_posture_.points.resize(1);
-  grasp_data.pre_grasp_posture_.points[0].positions.push_back(THUMB_JOINT_DOWN);
-  grasp_data.pre_grasp_posture_.points[0].positions.push_back(FINGER_JOINT_OUT);
-  grasp_data.pre_grasp_posture_.points[0].positions.push_back(FINGER_JOINT_OUT);
+  grasp_data.pre_grasp_posture_.points[0].positions.push_back(FINGER_JOINT_OPEN);
+  grasp_data.pre_grasp_posture_.points[0].positions.push_back(FINGER_JOINT_OPEN);
+  grasp_data.pre_grasp_posture_.points[0].positions.push_back(THUMB_JOINT_DOWN); // just to debug -0.2
+  grasp_data.pre_grasp_posture_.points[0].time_from_start = ros::Duration(4,0); //this will be added to something set at pick_place.cpp in a define... wtf
 
   // -------------------------------
   // Create grasp posture (fingers closed, thumb down)
   grasp_data.grasp_posture_.header.frame_id = BASE_LINK;
   grasp_data.grasp_posture_.header.stamp = ros::Time::now();
   // Name of joints:
-  grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_thumb_joint");
   grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_index_joint");
   grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_middle_joint");
+  grasp_data.grasp_posture_.joint_names.push_back("hand_" + side + "_thumb_joint");
   // Position of joints
   grasp_data.grasp_posture_.points.resize(1);
+  grasp_data.grasp_posture_.points[0].positions.push_back(FINGER_JOINT_CLOSED);
+  grasp_data.grasp_posture_.points[0].positions.push_back(FINGER_JOINT_CLOSED);
   grasp_data.grasp_posture_.points[0].positions.push_back(THUMB_JOINT_DOWN);
-  grasp_data.grasp_posture_.points[0].positions.push_back(FINGER_JOINT_IN);
-  grasp_data.grasp_posture_.points[0].positions.push_back(FINGER_JOINT_IN);
+  grasp_data.grasp_posture_.points[0].time_from_start = ros::Duration(4,0);
 
   // -------------------------------
   // SRDF Info
