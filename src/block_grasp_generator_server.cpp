@@ -40,8 +40,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseArray.h>
 #include <actionlib/server/simple_action_server.h>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
 
 // Grasp generation
 #include <block_grasp_generator/block_grasp_generator.h>
