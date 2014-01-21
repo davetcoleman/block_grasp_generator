@@ -106,7 +106,7 @@ private:
   bool animate_;
 
 public:
-
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   // Constructor
   BlockGraspGenerator(VisualizationToolsPtr rviz_tools);
 
