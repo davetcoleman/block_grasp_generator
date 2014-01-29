@@ -50,13 +50,13 @@ VisualizationTools::VisualizationTools(std::string base_link,
 }
 
 VisualizationTools::VisualizationTools(std::string base_link, std::string marker_topic)
-  : base_link_(base_link),
+  : nh_("~"),
     marker_topic_(marker_topic),
     ee_group_name_("unknown"),
     planning_group_name_("unknown"),
+    base_link_(base_link),
     floor_to_base_height_(0),
     marker_lifetime_(ros::Duration(30.0)),
-    nh_("~"),
     muted_(true)
 {
   // Rviz Visualizations
