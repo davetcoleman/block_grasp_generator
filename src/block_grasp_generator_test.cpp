@@ -75,9 +75,9 @@ public:
 
   // Constructor
   GraspGeneratorTest(int num_tests)
-    : arm_("right"),
-      planning_group_name_(arm_+"_arm"),
-      nh_("~")
+    : nh_("~"),
+      arm_("right"),
+      planning_group_name_(arm_+"_arm")
   {
     // ---------------------------------------------------------------------------------------------
     // Load grasp data specific to our robot
