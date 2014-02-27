@@ -40,7 +40,7 @@
 namespace block_grasp_generator
 {
 
-VisualizationTools::VisualizationTools(std::string base_link, 
+VisualizationTools::VisualizationTools(std::string base_link,
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
   std::string marker_topic)
   : planning_scene_monitor_(planning_scene_monitor)
@@ -110,10 +110,6 @@ void VisualizationTools::loadRvizMarkers()
   arrow_marker_.type = visualization_msgs::Marker::ARROW;
   // Set the marker action.  Options are ADD and DELETE
   arrow_marker_.action = visualization_msgs::Marker::ADD;
-  // Size
-  arrow_marker_.scale.x = 0.05; //0.025; // arrow width - but i would call this the length
-  arrow_marker_.scale.y = 0.005; // arrow height
-  arrow_marker_.scale.z = 0.005; // arrow length
   // Lifetime
   arrow_marker_.lifetime = marker_lifetime_;
 
@@ -285,7 +281,7 @@ bool VisualizationTools::loadRobotMarkers()
       robot_marker_array.markers[i].mesh_use_embedded_materials = true;
 
     pub_rviz_marker_.publish( robot_marker_array.markers[i] );
-  ros::spinOnce();
+    ros::spinOnce();
   }
 
   return true;
@@ -325,7 +321,7 @@ bool VisualizationTools::loadEEMarker()
   robot_interaction::RobotInteraction robot_interaction( robot_model );
 
   // Decide active end effectors
-  robot_interaction.decideActiveEndEffectors(planning_group_name_);
+  robot_interaction.decideActiveComponents(planning_group_name_);
 
   // Get active EE
   std::vector<robot_interaction::RobotInteraction::EndEffector> active_eef =
@@ -381,12 +377,12 @@ bool VisualizationTools::publishEEMarkers(const geometry_msgs::Pose &pose,
   if(muted_)
     return true;
 
-    // Load EE Markers
-    if( !loadEEMarker() )
-    {
-      ROS_ERROR_STREAM_NAMED("viz_tools","Unable to publish EE marker");
-      return false;
-    }
+  // Load EE Markers
+  if( !loadEEMarker() )
+  {
+    ROS_ERROR_STREAM_NAMED("viz_tools","Unable to publish EE marker");
+    return false;
+  }
 
   // -----------------------------------------------------------------------------------------------
   // Change the end effector pose to frame of reference of this custom end effector
@@ -520,7 +516,7 @@ bool VisualizationTools::publishEEMarkers(const geometry_msgs::Pose &pose,
  marker.lifetime = marker_lifetime_;
 
  pub_rviz_marker_.publish( marker );
-  ros::spinOnce();
+ ros::spinOnce();
 
  return true;
  }
@@ -549,7 +545,14 @@ bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose)
   return true;
 }
 
-bool VisualizationTools::publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color)
+bool VisualizationTools::publishArrow(const Eigen::Affine3d &pose, const rviz_colors color, const rviz_scales scale)
+{
+  geometry_msgs::Pose pose_msg;
+  tf::poseEigenToMsg(pose, pose_msg);
+  publishArrow(pose_msg, color, scale);
+}
+
+bool VisualizationTools::publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color, const rviz_scales scale)
 {
   if(muted_)
     return true;
@@ -559,10 +562,9 @@ bool VisualizationTools::publishArrow(const geometry_msgs::Pose &pose, const rvi
 
   static int id = 0;
   arrow_marker_.id = ++id;
-
   arrow_marker_.pose = pose;
-
   arrow_marker_.color = getColor(color);
+  arrow_marker_.scale = getScale(scale);
 
   pub_rviz_marker_.publish( arrow_marker_ );
   ros::spinOnce();
@@ -840,6 +842,29 @@ std_msgs::ColorRGBA VisualizationTools::getColor(const rviz_colors &color)
       result.r = 0.1;
       result.g = 0.1;
       result.b = 0.8;
+  }
+
+  return result;
+}
+
+geometry_msgs::Vector3 VisualizationTools::getScale(const rviz_scales &scale)
+{
+  geometry_msgs::Vector3 result;
+  switch(scale)
+  {
+    case REGULAR:
+      result.x = 0.05;; // arrow width - but i would call this the length
+      result.y = 0.005; // arrow height
+      result.z = 0.005; // arrow length
+      break;
+    case LARGE:
+      result.x = 0.1;  // arrow width - but i would call this the length
+      result.y = 0.01; // arrow height
+      result.z = 0.01; // arrow length
+      break;
+    default:
+      ROS_ERROR_STREAM_NAMED("visualization_tools","Not implemented yet");
+      break;
   }
 
   return result;

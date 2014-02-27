@@ -71,6 +71,7 @@ static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object"
 static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 
 enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE, ORANGE };
+enum rviz_scales { XSMALL, SMALL, REGULAR, LARGE, XLARGE };
 
 class VisualizationTools
 {
@@ -167,6 +168,7 @@ public:
 
   /**
    * \brief Publish an end effector to rviz
+   * \param pose - the location to publish the arrow with respect to the base frame
    * \return true if it is successful
    */
   bool publishEEMarkers(const geometry_msgs::Pose &pose, const rviz_colors &color = WHITE,
@@ -174,24 +176,30 @@ public:
 
   /**
    * \brief Publish an marker of a sphere to rviz
+   * \param pose - the location to publish the arrow with respect to the base frame
    * \return true if it is successful
    */
   bool publishSphere(const geometry_msgs::Pose &pose);
 
   /**
    * \brief Publish an marker of an arrow to rviz
+   * \param pose - the location to publish the arrow with respect to the base frame
+   * \param color - the color of the arrow
    * \return true if it is successful
    */
-  bool publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color = BLUE);
+  bool publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
+  bool publishArrow(const Eigen::Affine3d &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
 
   /**
    * \brief Publish an marker of a block to Rviz
+   * \param pose - the location to publish the arrow with respect to the base frame
    * \return true if it is successful
    */
   bool publishBlock(const geometry_msgs::Pose &pose, const double &block_size, const bool isRed);
 
   /**
    * \brief Publish an marker of a text to Rviz
+   * \param pose - the location to publish the arrow with respect to the base frame
    * \return true if it is successful
    */
   bool publishText(const geometry_msgs::Pose &pose, const std::string &text,
@@ -287,10 +295,17 @@ public:
 
   /**
    * \brief Get the RGB value of standard colors
-   * \param color - a enum pre-defined name of a color
+   * \param color - an enum pre-defined name of a color
    * \return the RGB message equivalent
    */
   std_msgs::ColorRGBA getColor(const rviz_colors &color);
+
+  /**
+   * \brief Get the rviz marker scale of standard sizes
+   * \param scale - an enum pre-defined name of a size
+   * \return vector of 3 scales
+   */
+  geometry_msgs::Vector3 getScale(const rviz_scales &scale);
 
   /**
    * \brief Get the end effector parent link as loaded from the SRDF
