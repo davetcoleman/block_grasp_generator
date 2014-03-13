@@ -112,7 +112,7 @@ block_grasp_generator::RobotGraspData loadRobotGraspData(const std::string& side
   // -------------------------------
   // SRDF Info
   grasp_data.base_link_ = BASE_LINK;
-  grasp_data.ee_parent_link_ = "arm_" + side + "_7_link";
+  grasp_data.ee_parent_link_ = "hand_" + side + "_grasping_frame";
   grasp_data.ee_group_ = side + "_hand";
   //grasp_data.ee_joint_ = side + "_gripper_l_finger_joint"; // NOTE: only 1 joint?
 
