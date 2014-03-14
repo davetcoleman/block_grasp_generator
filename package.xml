@@ -11,6 +11,7 @@
   <url type="repository">https://github.com/davetcoleman/block_grasp_generator</url>
 
   <author>Dave Coleman</author>
+  <author email="bence.magyar@pal-robotics.com">Bence Magyar</author>
 
   <build_depend>roscpp</build_depend>
   <build_depend>eigen_conversions</build_depend>
@@ -23,7 +24,9 @@
   <build_depend>moveit_ros_planning_interface</build_depend>
   <build_depend>moveit_ros_robot_interaction</build_depend>
   <build_depend>moveit_core</build_depend>
-  <build_depend>std_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>moveit_msgs</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>eigen_conversions</run_depend>
@@ -36,7 +39,9 @@
   <run_depend>moveit_ros_planning_interface</run_depend>
   <run_depend>moveit_ros_robot_interaction</run_depend>
   <run_depend>moveit_core</run_depend>
-  <run_depend>std_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>moveit_msgs</run_depend>
 
   <buildtool_depend>catkin</buildtool_depend>
 

@@ -45,7 +45,7 @@
 // Baxter specific
 //static const std::string EE_LINK = "gripper_roll_link";
 static const std::string EE_PARENT_LINK = "right_wrist";
-static const std::string PLANNING_GROUP_NAME = "right_arm";
+static const std::string PLANNING_GROUP_NAME = "right_arm_torso_grasping";
 static const std::string EE_GROUP = "right_hand";
 static const std::string BASE_LINK = "/base";
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
   // ---------------------------------------------------------------------------------------------
   // Load the Robot Viz Tools for publishing to Rviz
-  ROS_INFO_STREAM_NAMED("temp","Loading visualiztion tools");
+  ROS_INFO_STREAM_NAMED("temp","Loading visualization tools");
   block_grasp_generator::VisualizationToolsPtr visual_tools_;
   visual_tools_.reset(new block_grasp_generator::VisualizationTools( BASE_LINK));
   visual_tools_->setEEGroupName(EE_GROUP);

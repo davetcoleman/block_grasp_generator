@@ -8,9 +8,9 @@ find_package(Boost REQUIRED thread system)
 find_package(catkin REQUIRED
   roscpp
   std_msgs
-  visualization_msgs 
-  eigen_conversions 
-  moveit_ros_planning 
+  visualization_msgs
+  eigen_conversions
+  moveit_ros_planning
   moveit_ros_planning_interface
   moveit_ros_robot_interaction
   moveit_core
@@ -18,7 +18,18 @@ find_package(catkin REQUIRED
   tf_conversions
   std_msgs
   trajectory_msgs
+  message_generation
+  geometry_msgs
+  actionlib
+  moveit_msgs
 )
+
+add_action_files(DIRECTORY action FILES
+  GenerateBlockGrasps.action
+)
+
+generate_messages(DEPENDENCIES
+  geometry_msgs actionlib_msgs std_msgs moveit_msgs)
 
 # Visualization Tools Library
 add_library(${PROJECT_NAME}_visualization_tools
@@ -63,6 +74,7 @@ catkin_package(
     tf
     tf_conversions
     std_msgs
+    message_runtime
   INCLUDE_DIRS include
 )
 
@@ -76,6 +88,12 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 link_directories(${catkin_LIBRARY_DIRS})
+
+# Test executable
+add_executable(block_grasp_generator_server src/block_grasp_generator_server.cpp)
+target_link_libraries(block_grasp_generator_server
+  ${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES}
+)
 
 # Test executable
 add_executable(grasp_filter_test src/grasp_filter_test.cpp)
