@@ -70,7 +70,7 @@ static const std::string COLLISION_TOPIC = "/collision_object";
 static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object";
 static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 
-enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE, ORANGE };
+enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE, ORANGE, BLACK };
 enum rviz_scales { XSMALL, SMALL, REGULAR, LARGE, XLARGE };
 
 class VisualizationTools
@@ -176,19 +176,23 @@ public:
 
   /**
    * \brief Publish an marker of a sphere to rviz
-   * \param pose - the location to publish the arrow with respect to the base frame
+   * \param pose - the location to publish the sphere with respect to the base frame
+   * \param color - the color of the sphere
+   * \param scale - an enum pre-defined name of a size
    * \return true if it is successful
    */
-  bool publishSphere(const geometry_msgs::Pose &pose);
+  bool publishSphere(const Eigen::Affine3d &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
+  bool publishSphere(const geometry_msgs::Pose &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
 
   /**
    * \brief Publish an marker of an arrow to rviz
    * \param pose - the location to publish the arrow with respect to the base frame
    * \param color - the color of the arrow
+   * \param scale - an enum pre-defined name of a size   
    * \return true if it is successful
    */
-  bool publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
   bool publishArrow(const Eigen::Affine3d &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
+  bool publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
 
   /**
    * \brief Publish an marker of a block to Rviz
@@ -242,12 +246,13 @@ public:
    * \brief Set the lifetime of markers published to rviz
    * \param lifetime seconds of how long to show markers. 0 for inifinity
    */
-  void setLifetime(int lifetime)
+  void setLifetime(double lifetime)
   {
     marker_lifetime_ = ros::Duration(lifetime);
 
     // Update cached markers
     arrow_marker_.lifetime = marker_lifetime_;
+    sphere_marker_.lifetime = marker_lifetime_;
     block_marker_.lifetime = marker_lifetime_;
     text_marker_.lifetime = marker_lifetime_;    
   }

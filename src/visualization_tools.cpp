@@ -140,17 +140,13 @@ void VisualizationTools::loadRvizMarkers()
   sphere_marker_.pose.orientation.y = 0.0;
   sphere_marker_.pose.orientation.z = 0.0;
   sphere_marker_.pose.orientation.w = 1.0;
-  // Sphere size
-  sphere_marker_.scale.x = 0.01;
-  sphere_marker_.scale.y = 0.01;
-  sphere_marker_.scale.z = 0.01;
-  // Color
-  sphere_marker_.color = getColor( BLUE );
   // Create a sphere point
   geometry_msgs::Point point_a;
   // Add the point pair to the line message
   sphere_marker_.points.push_back( point_a );
   sphere_marker_.colors.push_back( getColor( BLUE ) );
+  // Lifetime
+  sphere_marker_.lifetime = marker_lifetime_;
 
   // Load Text ----------------------------------------------------
   text_marker_.header.frame_id = base_link_;
@@ -522,7 +518,14 @@ bool VisualizationTools::publishEEMarkers(const geometry_msgs::Pose &pose,
  }
 */
 
-bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose)
+bool VisualizationTools::publishSphere(const Eigen::Affine3d &pose, const rviz_colors color, const rviz_scales scale)
+{
+  geometry_msgs::Pose pose_msg;
+  tf::poseEigenToMsg(pose, pose_msg);
+  publishSphere(pose_msg, color, scale);
+}
+
+bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose, const rviz_colors color, const rviz_scales scale)
 {
   if(muted_)
     return true; // this function will only work if we have loaded the publishers
@@ -532,11 +535,12 @@ bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose)
 
   static int id = 0;
   sphere_marker_.id = ++id;
-
-  sphere_marker_.lifetime = marker_lifetime_;
+  sphere_marker_.color = getColor(color);
+  sphere_marker_.scale = getScale(scale);
 
   // Update the single point with new pose
   sphere_marker_.points[0] = pose.position;
+  sphere_marker_.colors[0] = getColor(color);
 
   // Publish
   pub_rviz_marker_.publish( sphere_marker_ );
@@ -835,6 +839,11 @@ std_msgs::ColorRGBA VisualizationTools::getColor(const rviz_colors &color)
     case ORANGE:
       result.r = 1.0;
       result.g = 0.5;
+      result.b = 0.0;
+      break;
+    case BLACK:
+      result.r = 0.0;
+      result.g = 0.0;
       result.b = 0.0;
       break;
     case BLUE:
