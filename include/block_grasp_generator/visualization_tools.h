@@ -70,8 +70,8 @@ static const std::string COLLISION_TOPIC = "/collision_object";
 static const std::string ATTACHED_COLLISION_TOPIC = "/attached_collision_object";
 static const std::string RVIZ_MARKER_TOPIC = "/end_effector_marker";
 
-enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE, ORANGE, BLACK };
-enum rviz_scales { XSMALL, SMALL, REGULAR, LARGE, XLARGE };
+enum rviz_colors { RED, GREEN, BLUE, GREY, WHITE, ORANGE, BLACK, YELLOW };
+enum rviz_scales { XXSMALL, XSMALL, SMALL, REGULAR, LARGE, XLARGE };
 
 class VisualizationTools
 {
@@ -107,14 +107,16 @@ private:
   geometry_msgs::Pose grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
   std::vector<geometry_msgs::Pose> marker_poses_;
 
-  // Whether to actually publish to rviz or not
-  bool muted_;
+  bool muted_; // Whether to actually publish to rviz or not
+  double alpha_; // opacity of all markers
 
   // Cached Rviz markers
   visualization_msgs::Marker arrow_marker_;
   visualization_msgs::Marker sphere_marker_;
   visualization_msgs::Marker block_marker_;
   visualization_msgs::Marker text_marker_;
+  visualization_msgs::Marker rectangle_marker_;
+  visualization_msgs::Marker line_marker_;
 
 public:
 
@@ -168,7 +170,7 @@ public:
 
   /**
    * \brief Publish an end effector to rviz
-   * \param pose - the location to publish the arrow with respect to the base frame
+   * \param pose - the location to publish the marker with respect to the base frame
    * \return true if it is successful
    */
   bool publishEEMarkers(const geometry_msgs::Pose &pose, const rviz_colors &color = WHITE,
@@ -177,7 +179,7 @@ public:
   /**
    * \brief Publish an marker of a sphere to rviz
    * \param pose - the location to publish the sphere with respect to the base frame
-   * \param color - the color of the sphere
+   * \param color - an enum pre-defined name of a color
    * \param scale - an enum pre-defined name of a size
    * \return true if it is successful
    */
@@ -186,8 +188,8 @@ public:
 
   /**
    * \brief Publish an marker of an arrow to rviz
-   * \param pose - the location to publish the arrow with respect to the base frame
-   * \param color - the color of the arrow
+   * \param pose - the location to publish the marker with respect to the base frame
+   * \param color - an enum pre-defined name of a color
    * \param scale - an enum pre-defined name of a size   
    * \return true if it is successful
    */
@@ -195,15 +197,35 @@ public:
   bool publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
 
   /**
+   * \brief Publish an marker of rectangle to rviz
+   * \param point1 - x,y,z top corner location of box
+   * \param point2 - x,y,z bottom opposite corner location of box
+   * \param color - an enum pre-defined name of a color
+   * \return true if it is successful
+   */
+  bool publishRectangle(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2, const rviz_colors color = BLUE);
+
+  /**
+   * \brief Publish an marker of line to rviz
+   * \param point1 - x,y,z of start of line
+   * \param point2 - x,y,z of end of line
+   * \param color - an enum pre-defined name of a color
+   * \param scale - an enum pre-defined name of a size
+   * \return true if it is successful
+   */
+  bool publishLine(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2, 
+    const rviz_colors color = BLUE, const rviz_scales scale = REGULAR);
+
+  /**
    * \brief Publish an marker of a block to Rviz
-   * \param pose - the location to publish the arrow with respect to the base frame
+   * \param pose - the location to publish the marker with respect to the base frame
    * \return true if it is successful
    */
   bool publishBlock(const geometry_msgs::Pose &pose, const double &block_size, const bool isRed);
 
   /**
    * \brief Publish an marker of a text to Rviz
-   * \param pose - the location to publish the arrow with respect to the base frame
+   * \param pose - the location to publish the marker with respect to the base frame
    * \return true if it is successful
    */
   bool publishText(const geometry_msgs::Pose &pose, const std::string &text,
@@ -235,6 +257,15 @@ public:
   }
 
   /**
+   * \brief Change the transparency of all markers published
+   * \param alpha - value 0 - 1 where 0 is invisible
+   */
+  void setAlpha(double alpha)
+  {
+    alpha_ = alpha;
+  }
+
+  /**
    * \brief Return if we are in verbose mode
    */
   bool isMuted()
@@ -252,6 +283,8 @@ public:
 
     // Update cached markers
     arrow_marker_.lifetime = marker_lifetime_;
+    rectangle_marker_.lifetime = marker_lifetime_;
+    line_marker_.lifetime = marker_lifetime_;
     sphere_marker_.lifetime = marker_lifetime_;
     block_marker_.lifetime = marker_lifetime_;
     text_marker_.lifetime = marker_lifetime_;    
@@ -308,9 +341,11 @@ public:
   /**
    * \brief Get the rviz marker scale of standard sizes
    * \param scale - an enum pre-defined name of a size
+   * \param arrow_scale - they do not have an even scaling, compensate
+   * \param marker_scale - amount to scale the scale for accounting for different types of markers
    * \return vector of 3 scales
    */
-  geometry_msgs::Vector3 getScale(const rviz_scales &scale);
+  geometry_msgs::Vector3 getScale(const rviz_scales &scale, bool arrow_scale = false, double marker_scale = 1.0);
 
   /**
    * \brief Get the end effector parent link as loaded from the SRDF
