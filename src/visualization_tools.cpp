@@ -325,7 +325,7 @@ bool VisualizationTools::loadEEMarker()
   robot_interaction::RobotInteraction robot_interaction( robot_model );
 
   // Decide active end effectors
-  robot_interaction.decideActiveEndEffectors(planning_group_name_);
+  robot_interaction.decideActiveComponents(planning_group_name_);
 
   // Get active EE
   std::vector<robot_interaction::RobotInteraction::EndEffector> active_eef =
