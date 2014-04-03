@@ -41,9 +41,9 @@ namespace block_grasp_generator
 GraspFilter::GraspFilter( const std::string& base_link, bool rviz_verbose,
                           VisualizationToolsPtr rviz_tools, const std::string& planning_group ):
   base_link_(base_link),
+  planning_group_(planning_group),
   rviz_verbose_(rviz_verbose),
-  rviz_tools_(rviz_tools),
-  planning_group_(planning_group)
+  rviz_tools_(rviz_tools)
 {
   ROS_INFO_STREAM_NAMED("grasp","GraspFilter ready.");
 
@@ -64,6 +64,7 @@ bool GraspFilter::chooseBestGrasp( const std::vector<moveit_msgs::Grasp>& possib
     return false;
   }
   chosen = possible_grasps[0]; // just choose first one
+  return true;
 }
 
 // Return grasps that are kinematically feasible

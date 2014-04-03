@@ -111,9 +111,9 @@ public:
 
   // Constructor
   GraspGeneratorTest(int num_tests) 
-    : arm_("right"),
-      planning_group_name_(arm_+"_arm"),
-      nh_("~")      
+    : nh_("~"),
+      arm_("right"),
+      planning_group_name_(arm_+"_arm")
   {
 
     // ---------------------------------------------------------------------------------------------
@@ -164,7 +164,7 @@ public:
       block_grasp_generator_->visualizeGrasps(possible_grasps, block_pose, grasp_data_);
 
       // Make sure ros is still going
-      if(!ros::ok)
+      if(!ros::ok())
         break;
     }
 
