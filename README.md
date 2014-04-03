@@ -7,8 +7,8 @@ This is research code by [Dave Coleman](http://davetcoleman.com) at the Correll 
 
 ## Tested Robots
 
- - [Baxter](https://github.com/davetcoleman/baxter).
- - [ClamArm](https://github.com/davetcoleman/clam),
+ - [Baxter](https://github.com/davetcoleman/baxter)
+ - [ClamArm](https://github.com/davetcoleman/clam)
  - [REEM](http://wiki.ros.org/Robots/REEM)
 
 ## Build Status

@@ -106,7 +106,8 @@ private:
   bool animate_;
 
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW // Eigen requires 128-bit alignment for the Eigen::Vector2d's array (of 2 doubles). With GCC, this is done with a attribute ((aligned(16))).
+
   // Constructor
   BlockGraspGenerator(VisualizationToolsPtr rviz_tools);
 

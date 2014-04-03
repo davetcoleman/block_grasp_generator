@@ -10,7 +10,7 @@
   <url type="bugtracker">https://github.com/davetcoleman/block_grasp_generator/issues</url>
   <url type="repository">https://github.com/davetcoleman/block_grasp_generator</url>
 
-  <author>Dave Coleman</author>
+  <author email="davetcoleman@gmail.com">Dave Coleman</author>
   <author email="bence.magyar@pal-robotics.com">Bence Magyar</author>
 
   <build_depend>roscpp</build_depend>

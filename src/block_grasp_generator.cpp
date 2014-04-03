@@ -59,10 +59,10 @@ bool BlockGraspGenerator::generateGrasps(const geometry_msgs::Pose& block_pose, 
 
   // ---------------------------------------------------------------------------------------------
   // Calculate grasps in two axis in both directions
-//  generateAxisGrasps( possible_grasps, X_AXIS, DOWN, grasp_data); // got no grasps with this alone
-//  generateAxisGrasps( possible_grasps, X_AXIS, UP,   grasp_data); // gives some grasps... looks ugly
+  generateAxisGrasps( possible_grasps, X_AXIS, DOWN, grasp_data); // got no grasps with this alone
+  generateAxisGrasps( possible_grasps, X_AXIS, UP,   grasp_data); // gives some grasps... looks ugly
   generateAxisGrasps( possible_grasps, Y_AXIS, DOWN, grasp_data); // GOOD ONES!
-//  generateAxisGrasps( possible_grasps, Y_AXIS, UP,   grasp_data); // gave a grasp from top... bad
+  generateAxisGrasps( possible_grasps, Y_AXIS, UP,   grasp_data); // gave a grasp from top... bad
   ROS_INFO_STREAM_NAMED("grasp", "Generated " << possible_grasps.size() << " grasps." );
 
   // Visualize results

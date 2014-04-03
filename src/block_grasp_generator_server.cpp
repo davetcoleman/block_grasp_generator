@@ -33,7 +33,8 @@
  */
 
 /* Author: Bence Magyar
-   Desc:   Grasp generator action server
+   Desc:   Action server wrapper for block grasp generator. Currently only works for REEM robot, 
+           needs to be changed to work with yaml configuration file instead.
 */
 
 // ROS
