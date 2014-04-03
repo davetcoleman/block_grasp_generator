@@ -40,7 +40,7 @@
 namespace block_grasp_generator
 {
 
-VisualizationTools::VisualizationTools(std::string base_link, 
+VisualizationTools::VisualizationTools(std::string base_link,
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
   std::string marker_topic)
   : planning_scene_monitor_(planning_scene_monitor)
@@ -57,7 +57,8 @@ VisualizationTools::VisualizationTools(std::string base_link, std::string marker
     base_link_(base_link),
     floor_to_base_height_(0),
     marker_lifetime_(ros::Duration(30.0)),
-    muted_(true)
+    muted_(true),
+    alpha_(0.8)
 {
   // Rviz Visualizations
   pub_rviz_marker_ = nh_.advertise<visualization_msgs::Marker>(marker_topic_, 10);
@@ -110,12 +111,32 @@ void VisualizationTools::loadRvizMarkers()
   arrow_marker_.type = visualization_msgs::Marker::ARROW;
   // Set the marker action.  Options are ADD and DELETE
   arrow_marker_.action = visualization_msgs::Marker::ADD;
-  // Size
-  arrow_marker_.scale.x = 0.05; //0.025; // arrow width - but i would call this the length
-  arrow_marker_.scale.y = 0.005; // arrow height
-  arrow_marker_.scale.z = 0.005; // arrow length
   // Lifetime
   arrow_marker_.lifetime = marker_lifetime_;
+
+  // Load rectangle ----------------------------------------------------
+
+  rectangle_marker_.header.frame_id = base_link_;
+  // Set the namespace and id for this marker.  This serves to create a unique ID
+  rectangle_marker_.ns = "Rectangle";
+  // Set the marker type.
+  rectangle_marker_.type = visualization_msgs::Marker::CUBE;
+  // Set the marker action.  Options are ADD and DELETE
+  rectangle_marker_.action = visualization_msgs::Marker::ADD;
+  // Lifetime
+  rectangle_marker_.lifetime = marker_lifetime_;
+
+  // Load line ----------------------------------------------------
+
+  line_marker_.header.frame_id = base_link_;
+  // Set the namespace and id for this marker.  This serves to create a unique ID
+  line_marker_.ns = "Line";
+  // Set the marker type.
+  line_marker_.type = visualization_msgs::Marker::LINE_STRIP;
+  // Set the marker action.  Options are ADD and DELETE
+  line_marker_.action = visualization_msgs::Marker::ADD;
+  // Lifetime
+  line_marker_.lifetime = marker_lifetime_;
 
   // Load Block ----------------------------------------------------
   block_marker_.header.frame_id = base_link_;
@@ -144,17 +165,13 @@ void VisualizationTools::loadRvizMarkers()
   sphere_marker_.pose.orientation.y = 0.0;
   sphere_marker_.pose.orientation.z = 0.0;
   sphere_marker_.pose.orientation.w = 1.0;
-  // Sphere size
-  sphere_marker_.scale.x = 0.01;
-  sphere_marker_.scale.y = 0.01;
-  sphere_marker_.scale.z = 0.01;
-  // Color
-  sphere_marker_.color = getColor( BLUE );
   // Create a sphere point
   geometry_msgs::Point point_a;
   // Add the point pair to the line message
   sphere_marker_.points.push_back( point_a );
   sphere_marker_.colors.push_back( getColor( BLUE ) );
+  // Lifetime
+  sphere_marker_.lifetime = marker_lifetime_;
 
   // Load Text ----------------------------------------------------
   text_marker_.header.frame_id = base_link_;
@@ -285,7 +302,7 @@ bool VisualizationTools::loadRobotMarkers()
       robot_marker_array.markers[i].mesh_use_embedded_materials = true;
 
     pub_rviz_marker_.publish( robot_marker_array.markers[i] );
-  ros::spinOnce();
+    ros::spinOnce();
   }
 
   return true;
@@ -381,12 +398,12 @@ bool VisualizationTools::publishEEMarkers(const geometry_msgs::Pose &pose,
   if(muted_)
     return true;
 
-    // Load EE Markers
-    if( !loadEEMarker() )
-    {
-      ROS_ERROR_STREAM_NAMED("viz_tools","Unable to publish EE marker");
-      return false;
-    }
+  // Load EE Markers
+  if( !loadEEMarker() )
+  {
+    ROS_ERROR_STREAM_NAMED("viz_tools","Unable to publish EE marker");
+    return false;
+  }
 
   // -----------------------------------------------------------------------------------------------
   // Change the end effector pose to frame of reference of this custom end effector
@@ -520,13 +537,20 @@ bool VisualizationTools::publishEEMarkers(const geometry_msgs::Pose &pose,
  marker.lifetime = marker_lifetime_;
 
  pub_rviz_marker_.publish( marker );
-  ros::spinOnce();
+ ros::spinOnce();
 
  return true;
  }
 */
 
-bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose)
+bool VisualizationTools::publishSphere(const Eigen::Affine3d &pose, const rviz_colors color, const rviz_scales scale)
+{
+  geometry_msgs::Pose pose_msg;
+  tf::poseEigenToMsg(pose, pose_msg);
+  publishSphere(pose_msg, color, scale);
+}
+
+bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose, const rviz_colors color, const rviz_scales scale)
 {
   if(muted_)
     return true; // this function will only work if we have loaded the publishers
@@ -536,11 +560,12 @@ bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose)
 
   static int id = 0;
   sphere_marker_.id = ++id;
-
-  sphere_marker_.lifetime = marker_lifetime_;
+  sphere_marker_.color = getColor(color);
+  sphere_marker_.scale = getScale(scale, false, 0.1);
 
   // Update the single point with new pose
   sphere_marker_.points[0] = pose.position;
+  sphere_marker_.colors[0] = getColor(color);
 
   // Publish
   pub_rviz_marker_.publish( sphere_marker_ );
@@ -549,7 +574,14 @@ bool VisualizationTools::publishSphere(const geometry_msgs::Pose &pose)
   return true;
 }
 
-bool VisualizationTools::publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color)
+bool VisualizationTools::publishArrow(const Eigen::Affine3d &pose, const rviz_colors color, const rviz_scales scale)
+{
+  geometry_msgs::Pose pose_msg;
+  tf::poseEigenToMsg(pose, pose_msg);
+  publishArrow(pose_msg, color, scale);
+}
+
+bool VisualizationTools::publishArrow(const geometry_msgs::Pose &pose, const rviz_colors color, const rviz_scales scale)
 {
   if(muted_)
     return true;
@@ -559,10 +591,9 @@ bool VisualizationTools::publishArrow(const geometry_msgs::Pose &pose, const rvi
 
   static int id = 0;
   arrow_marker_.id = ++id;
-
   arrow_marker_.pose = pose;
-
   arrow_marker_.color = getColor(color);
+  arrow_marker_.scale = getScale(scale, true);
 
   pub_rviz_marker_.publish( arrow_marker_ );
   ros::spinOnce();
@@ -601,6 +632,60 @@ bool VisualizationTools::publishBlock(const geometry_msgs::Pose &pose, const dou
 
   pub_rviz_marker_.publish( block_marker_ );
   //ros::Duration(0.05).sleep(); // Sleep to prevent markers from being 'skipped' in rviz
+
+  return true;
+}
+
+bool VisualizationTools::publishRectangle(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2, const rviz_colors color)
+{
+  if(muted_)
+    return true;
+
+  // Set the timestamp
+  rectangle_marker_.header.stamp = ros::Time::now();
+
+  static int id = 0;
+  rectangle_marker_.id = ++id;
+  rectangle_marker_.color = getColor(color);
+
+  // Calculate pose
+  geometry_msgs::Pose pose;
+  pose.position.x = (point1.x - point2.x) / 2.0 + point2.x;
+  pose.position.y = (point1.y - point2.y) / 2.0 + point2.y;
+  pose.position.z = (point1.z - point2.z) / 2.0 + point2.z;
+  rectangle_marker_.pose = pose;
+
+  // Calculate scale  
+  rectangle_marker_.scale.x = fabs(point1.x - point2.x);
+  rectangle_marker_.scale.y = fabs(point1.y - point2.y);
+  rectangle_marker_.scale.z = fabs(point1.z - point2.z);
+  
+  pub_rviz_marker_.publish( rectangle_marker_ );
+  ros::spinOnce();
+
+  return true;
+}
+
+bool VisualizationTools::publishLine(const geometry_msgs::Point &point1, const geometry_msgs::Point &point2, 
+  const rviz_colors color, const rviz_scales scale)
+{
+  if(muted_)
+    return true;
+
+  // Set the timestamp
+  line_marker_.header.stamp = ros::Time::now();
+
+  static int id = 0;
+  line_marker_.id = ++id;
+  line_marker_.color = getColor(color);
+  line_marker_.scale = getScale( scale, false, 0.1 );
+
+  line_marker_.points.clear();
+  line_marker_.points.push_back(point1);
+  line_marker_.points.push_back(point2);
+  
+  pub_rviz_marker_.publish( line_marker_ );
+  ros::spinOnce();
 
   return true;
 }
@@ -807,7 +892,7 @@ bool VisualizationTools::publishTrajectoryPath(const moveit_msgs::RobotTrajector
 std_msgs::ColorRGBA VisualizationTools::getColor(const rviz_colors &color)
 {
   std_msgs::ColorRGBA result;
-  result.a = 0.8;
+  result.a = alpha_;
   switch(color)
   {
     case RED:
@@ -835,11 +920,64 @@ std_msgs::ColorRGBA VisualizationTools::getColor(const rviz_colors &color)
       result.g = 0.5;
       result.b = 0.0;
       break;
+    case BLACK:
+      result.r = 0.0;
+      result.g = 0.0;
+      result.b = 0.0;
+      break;
+    case YELLOW:
+      result.r = 1.0;
+      result.g = 1.0;
+      result.b = 0.0;
+      break;
     case BLUE:
     default:
       result.r = 0.1;
       result.g = 0.1;
       result.b = 0.8;
+  }
+
+  return result;
+}
+
+geometry_msgs::Vector3 VisualizationTools::getScale(const rviz_scales &scale, bool arrow_scale, double marker_scale)
+{
+  geometry_msgs::Vector3 result;
+  double val;
+  switch(scale)
+  {
+    case XXSMALL:
+      val = 0.005;
+      break;
+    case XSMALL:
+      val = 0.01;
+      break;
+    case SMALL:
+      val = 0.03;
+      break;
+    case REGULAR:
+      val = 0.05;
+      break;
+    case LARGE:
+      val = 0.1;  
+      break;
+    case XLARGE:
+
+      break;
+    default:
+      ROS_ERROR_STREAM_NAMED("visualization_tools","Not implemented yet");
+      break;
+  }
+
+  result.x = val * marker_scale; 
+  result.y = val * marker_scale;
+  result.z = val * marker_scale;
+
+  // The y and z scaling is smaller for arrows
+  if (arrow_scale)
+  {
+    result.y *= 0.1;
+    result.z *= 0.1;
   }
 
   return result;
