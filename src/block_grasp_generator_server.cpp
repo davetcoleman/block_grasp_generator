@@ -68,7 +68,7 @@ namespace block_grasp_generator
     block_grasp_generator::BlockGraspGeneratorPtr block_grasp_generator_;
 
     // class for publishing stuff to rviz
-    block_grasp_generator::VisualizationToolsPtr visual_tools_;
+    moveit_visualization_tools::VisualizationToolsPtr visual_tools_;
 
     // robot-specific data for generating grasps
     block_grasp_generator::RobotGraspData grasp_data_;
@@ -92,7 +92,7 @@ namespace block_grasp_generator
 
       // ---------------------------------------------------------------------------------------------
       // Load the Robot Viz Tools for publishing to Rviz
-      visual_tools_.reset(new block_grasp_generator::VisualizationTools(reem_pick_place::BASE_LINK));
+      visual_tools_.reset(new moveit_visualization_tools::VisualizationTools(reem_pick_place::BASE_LINK));
       visual_tools_->setLifetime(120.0);
       visual_tools_->setMuted(false);
       visual_tools_->setEEGroupName(grasp_data_.ee_group_);

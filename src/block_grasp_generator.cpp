@@ -38,7 +38,7 @@ namespace block_grasp_generator
 {
 
 // Constructor
-BlockGraspGenerator::BlockGraspGenerator(VisualizationToolsPtr rviz_tools) :
+BlockGraspGenerator::BlockGraspGenerator(moveit_visualization_tools::VisualizationToolsPtr rviz_tools) :
   rviz_tools_(rviz_tools),
   animate_(false)
 {
@@ -187,7 +187,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<moveit_msgs::Grasp>& po
     if( true )
     {
       tf::poseEigenToMsg(block_global_transform_ * grasp_pose, grasp_pose_msg.pose);
-      rviz_tools_->publishArrow(grasp_pose_msg.pose, GREEN);
+      rviz_tools_->publishArrow(grasp_pose_msg.pose, moveit_visualization_tools::GREEN);
     }
 
     // ------------------------------------------------------------------------

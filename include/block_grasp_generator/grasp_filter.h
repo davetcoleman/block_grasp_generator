@@ -51,7 +51,7 @@
 // Rviz
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <block_grasp_generator/visualization_tools.h>
+#include <moveit_visualization_tools/visualization_tools.h>
 
 // MoveIt
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
@@ -116,13 +116,13 @@ private:
   bool rviz_verbose_;
 
   // class for publishing stuff to rviz
-  block_grasp_generator::VisualizationToolsPtr rviz_tools_;
+  moveit_visualization_tools::VisualizationToolsPtr rviz_tools_;
 
 public:
 
   // Constructor
   GraspFilter( const std::string& base_link, bool rviz_verbose, 
-               VisualizationToolsPtr rviz_tools, const std::string& planning_group );
+    moveit_visualization_tools::VisualizationToolsPtr rviz_tools, const std::string& planning_group );
 
   // Destructor
   ~GraspFilter();
