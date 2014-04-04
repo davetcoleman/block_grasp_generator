@@ -42,6 +42,7 @@ catkin_package(
     trajectory_msgs
     std_msgs
     message_runtime
+    moveit_visualization_tools
   INCLUDE_DIRS include
 )
 
@@ -68,14 +69,14 @@ target_link_libraries(${PROJECT_NAME}_filter
 )
 
 # Test executable
-add_executable(block_grasp_generator_server src/block_grasp_generator_server.cpp)
-target_link_libraries(block_grasp_generator_server
+add_executable(${PROJECT_NAME}_server src/block_grasp_generator_server.cpp)
+target_link_libraries(${PROJECT_NAME}_server
   ${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES}
 )
 
 # Test executable
-add_executable(block_grasp_generator_test src/block_grasp_generator_test.cpp)
-target_link_libraries(block_grasp_generator_test 
+add_executable(${PROJECT_NAME}_test src/block_grasp_generator_test.cpp)
+target_link_libraries(${PROJECT_NAME}_test 
   ${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES}
 )
 
@@ -83,7 +84,6 @@ target_link_libraries(block_grasp_generator_test
 install(TARGETS 
   ${PROJECT_NAME} 
   ${PROJECT_NAME}_filter 
-  ${PROJECT_NAME}_server
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
 # Mark cpp header files for installation
