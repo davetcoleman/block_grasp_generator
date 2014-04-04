@@ -5,6 +5,14 @@ Generic grasp generator for grasping small blocks with MoveIt. Also contains a p
 
 This is research code by [Dave Coleman](http://davetcoleman.com) at the Correll Robotics Lab. 
 
+## Install
+
+NEW: This package now depends on [moveit_visualization_tools](https://github.com/davetcoleman/moveit_visualization_tools)
+
+```
+git clone git@github.com:davetcoleman/moveit_visualization_tools.git
+```
+
 ## Tested Robots
 
  - [Baxter](https://github.com/davetcoleman/baxter)
