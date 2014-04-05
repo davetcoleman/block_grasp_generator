@@ -7,10 +7,10 @@ This is research code by [Dave Coleman](http://davetcoleman.com) at the Correll 
 
 ## Install
 
-NEW: This package now depends on [moveit_visualization_tools](https://github.com/davetcoleman/moveit_visualization_tools)
+NEW: This package now depends on [moveit_visual_tools](https://github.com/davetcoleman/moveit_visual_tools)
 
 ```
-git clone git@github.com:davetcoleman/moveit_visualization_tools.git
+git clone git@github.com:davetcoleman/moveit_visual_tools.git
 ```
 
 ## Tested Robots
