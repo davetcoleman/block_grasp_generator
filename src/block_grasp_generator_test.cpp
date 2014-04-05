@@ -62,7 +62,7 @@ private:
   block_grasp_generator::BlockGraspGeneratorPtr block_grasp_generator_;
 
   // class for publishing stuff to rviz
-  moveit_visual_tools::VisualizationToolsPtr visual_tools_;
+  moveit_visual_tools::VisualToolsPtr visual_tools_;
 
   // robot-specific data for generating grasps
   block_grasp_generator::RobotGraspData grasp_data_;
@@ -85,7 +85,7 @@ public:
 
     // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
-    visual_tools_.reset(new moveit_visual_tools::VisualizationTools(baxter_pick_place::BASE_LINK));
+    visual_tools_.reset(new moveit_visual_tools::VisualTools(baxter_pick_place::BASE_LINK));
     visual_tools_->setLifetime(120.0);
     visual_tools_->setMuted(false);
     visual_tools_->setEEGroupName(grasp_data_.ee_group_);

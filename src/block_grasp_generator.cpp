@@ -38,8 +38,8 @@ namespace block_grasp_generator
 {
 
 // Constructor
-BlockGraspGenerator::BlockGraspGenerator(moveit_visual_tools::VisualizationToolsPtr rviz_tools) :
-  rviz_tools_(rviz_tools),
+BlockGraspGenerator::BlockGraspGenerator(moveit_visual_tools::VisualToolsPtr rviz_tools) :
+  visual_tools_(rviz_tools),
   animate_(false)
 {
 }
@@ -187,7 +187,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<moveit_msgs::Grasp>& po
     if( true )
     {
       tf::poseEigenToMsg(block_global_transform_ * grasp_pose, grasp_pose_msg.pose);
-      rviz_tools_->publishArrow(grasp_pose_msg.pose, moveit_visual_tools::GREEN);
+      visual_tools_->publishArrow(grasp_pose_msg.pose, moveit_visual_tools::GREEN);
     }
 
     // ------------------------------------------------------------------------
@@ -267,7 +267,7 @@ bool BlockGraspGenerator::generateAxisGrasps(std::vector<moveit_msgs::Grasp>& po
 void BlockGraspGenerator::visualizeGrasps(const std::vector<moveit_msgs::Grasp>& possible_grasps,
   const geometry_msgs::Pose& block_pose, const RobotGraspData& grasp_data)
 {
-  if(rviz_tools_->isMuted())
+  if(visual_tools_->isMuted())
   {
     ROS_DEBUG_STREAM_NAMED("grasp","Not visualizing grasps - muted.");
     return;
@@ -289,7 +289,7 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<moveit_msgs::Grasp>&
       break;
 
     // Make sure block is still visible
-    rviz_tools_->publishBlock(block_pose, grasp_data.block_size_, false);
+    visual_tools_->publishBlock(block_pose, grasp_data.block_size_, false);
 
     ++i;
 
@@ -304,7 +304,7 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<moveit_msgs::Grasp>&
       {
       ROS_WARN_STREAM_NAMED("temp","HAS IK SOLUTION - Positions:");
       std::copy(grasp_it->grasp_posture.position.begin(), grasp_it->grasp_posture.position.end(), std::ostream_iterator<double>(std::cout, "\n"));
-      rviz_tools_->publishPlanningScene(grasp_it->grasp_posture.position);
+      visual_tools_->publishPlanningScene(grasp_it->grasp_posture.position);
       ros::Duration(5.0).sleep();
       }
     */
@@ -329,7 +329,7 @@ void BlockGraspGenerator::animateGrasp(const moveit_msgs::Grasp &grasp, const Ro
 
   // Display Grasp Score
   std::string text = "Grasp Quality: " + boost::lexical_cast<std::string>(int(grasp.grasp_quality*100)) + "%";
-  rviz_tools_->publishText(grasp_pose, text);
+  visual_tools_->publishText(grasp_pose, text);
 
   // Convert the grasp pose into the frame of reference of the approach/retreat frame_id
 
@@ -368,8 +368,8 @@ void BlockGraspGenerator::animateGrasp(const moveit_msgs::Grasp &grasp, const Ro
     // Convert eigen pre-grasp position back to regular message
     tf::poseEigenToMsg(pre_grasp_pose_eigen, pre_grasp_pose);
 
-    //rviz_tools_->publishArrow(pre_grasp_pose, BLUE);
-    rviz_tools_->publishEEMarkers(pre_grasp_pose);
+    //visual_tools_->publishArrow(pre_grasp_pose, BLUE);
+    visual_tools_->publishEEMarkers(pre_grasp_pose);
 
     ros::Duration(0.01).sleep();
   }
