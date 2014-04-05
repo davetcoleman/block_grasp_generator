@@ -1,7 +1,7 @@
 block_grasp_generator
 =====================
 
-NOTE: this package is deprecated in favor of [moveit_simple_grasps](ttps://github.com/davetcoleman/moveit_simple_grasps)
+NOTE: this package is deprecated in favor of [moveit_simple_grasps](https://github.com/davetcoleman/moveit_simple_grasps)
 
 Generic grasp generator for grasping small blocks with MoveIt. Also contains a powerful visualization_tools library for Rviz and MoveIt!
 
