@@ -26,6 +26,7 @@ install: # Use this to install any prerequisites or dependencies necessary to ru
   - mkdir -p ~/ros/ws_baxter/src
   - cd ~/ros/ws_baxter/src
   - git clone https://github.com/davetcoleman/moveit_visual_tools  # temporary until hydro package is released
+  - git clone https://github.com/davetcoleman/graph_msgs.git # temporary  
   #- wstool init .
   # Download non-debian stuff
   #- wstool merge https://raw.github.com/davetcoleman/baxter_cpp/hydro-devel/baxter_sdk.rosinstall
