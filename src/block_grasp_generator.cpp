@@ -289,7 +289,7 @@ void BlockGraspGenerator::visualizeGrasps(const std::vector<moveit_msgs::Grasp>&
       break;
 
     // Make sure block is still visible
-    visual_tools_->publishBlock(block_pose, grasp_data.block_size_, false);
+    visual_tools_->publishBlock(block_pose, moveit_visual_tools::BLUE, grasp_data.block_size_);
 
     ++i;
 

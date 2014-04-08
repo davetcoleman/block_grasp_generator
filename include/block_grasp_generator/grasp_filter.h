@@ -116,7 +116,7 @@ private:
   bool rviz_verbose_;
 
   // class for publishing stuff to rviz
-  moveit_visual_tools::VisualToolsPtr rviz_tools_;
+  moveit_visual_tools::VisualToolsPtr visual_tools_;
 
 public:
 

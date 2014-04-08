@@ -43,12 +43,12 @@ GraspFilter::GraspFilter( const std::string& base_link, bool rviz_verbose,
   base_link_(base_link),
   planning_group_(planning_group),
   rviz_verbose_(rviz_verbose),
-  rviz_tools_(rviz_tools)
+  visual_tools_(rviz_tools)
 {
   ROS_INFO_STREAM_NAMED("grasp","GraspFilter ready.");
 
   // Get the planning
-  robot_model_ = rviz_tools_->getPlanningSceneMonitor()->getPlanningScene()->getRobotModel();
+  robot_model_ = visual_tools_->getPlanningSceneMonitor()->getPlanningScene()->getRobotModel();
 }
 
 GraspFilter::~GraspFilter()
@@ -231,7 +231,7 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
 
       // TODO: is this thread safe? (prob not)
       if(rviz_verbose_)
-        rviz_tools_->publishArrow(*ik_pose);
+        visual_tools_->publishArrow(*ik_pose);
     }
     else if( error_code.val == moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION )
       ROS_INFO_STREAM_NAMED("grasp","Unable to find IK solution for pose.");

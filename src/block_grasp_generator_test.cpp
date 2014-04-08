@@ -154,7 +154,7 @@ public:
     // Choose which block to test
     block_pose = start_block_pose;
 
-    visual_tools_->publishBlock( block_pose, BLOCK_SIZE, true );
+    visual_tools_->publishBlock( block_pose, moveit_visual_tools::BLUE, BLOCK_SIZE);
   }
 
   void generateRandomBlock(geometry_msgs::Pose& block_pose)
