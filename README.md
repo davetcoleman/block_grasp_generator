@@ -3,6 +3,8 @@ block_grasp_generator
 
 DEPRECATED in favor of [moveit_simple_grasps](https://github.com/davetcoleman/moveit_simple_grasps)
 
+THIS REPO WILL BE DELETED IN 2015
+
 Generic grasp generator for grasping small blocks with MoveIt. Also contains a powerful visualization_tools library for Rviz and MoveIt!
 
 This is research code by [Dave Coleman](http://davetcoleman.com) at the Correll Robotics Lab. 
